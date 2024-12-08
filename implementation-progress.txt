@@ -1,0 +1,13 @@
+This implementation provides a solid foundation for the dashboard with:
+Modern, responsive layout
+Task filtering and search
+Task cards with progress indicators
+Status badges and deadlines
+Dark mode support
+Wallet connection placeholder
+To complete the setup, de did :
+Install the required shadcn/ui components:
+Set up the theme provider and other UI components as needed.
+data fetching logic and state management (using TanStack Query and Zustand as specified in the tech stack).
+to complete the setup you need to do :
+Add the wallet connection functionality using the Archethic blockchain integration.
