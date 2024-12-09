@@ -1,18 +1,3 @@
-/**
- * Task Grid Component
- * 
- * Features:
- * - Responsive grid layout (1 column mobile, 2 tablet, 3 desktop)
- * - Loading skeletons during data fetch
- * - Error and empty state handling
- * - Filtered task display from global store
- * 
- * Current Implementation:
- * - Integrated with TanStack Query for data fetching
- * - Uses Zustand store for filtered tasks
- * - Displays TaskCard components in grid layout
- */
-
 'use client'
 
 import { useTasksQuery } from '@/lib/hooks'

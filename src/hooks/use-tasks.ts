@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { api } from "@/lib/api"
 import { Task } from "@/types"
+import { useCreateTaskMutation } from "@/lib/hooks"
 
 export function useTasks() {
   const [isCreating, setIsCreating] = useState(false)
+  const createTaskMutation = useCreateTaskMutation()
 
   const createTask = async (task: Omit<Task, "currentAmount" | "status">) => {
     try {
@@ -16,15 +18,8 @@ export function useTasks() {
         status: "active" as const,
       }
 
-      // TODO: Replace with actual contract address
-      const contractAddress = "0x0000000000000000000000000000000000000000"
-      const result = await api.createTask(fullTask, contractAddress)
-
-      if (result) {
-        return { success: true }
-      } else {
-        return { success: false, error: "Failed to create task" }
-      }
+      await createTaskMutation.mutateAsync(fullTask)
+      return { success: true }
     } catch (error) {
       return { 
         success: false, 
@@ -37,9 +32,8 @@ export function useTasks() {
 
   const fundTask = async (taskId: string, amount: number) => {
     try {
-      // TODO: Replace with actual contract address
-      const contractAddress = "0x0000000000000000000000000000000000000000"
-      const result = await api.fundTask(taskId, amount, contractAddress)
+    
+      const result = await api.fundTask(taskId, amount)
 
       if (result) {
         return { success: true }

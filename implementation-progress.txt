@@ -1,13 +1,188 @@
-This implementation provides a solid foundation for the dashboard with:
-Modern, responsive layout
-Task filtering and search
-Task cards with progress indicators
-Status badges and deadlines
-Dark mode support
-Wallet connection placeholder
-To complete the setup, de did :
-Install the required shadcn/ui components:
-Set up the theme provider and other UI components as needed.
-data fetching logic and state management (using TanStack Query and Zustand as specified in the tech stack).
-to complete the setup you need to do :
-Add the wallet connection functionality using the Archethic blockchain integration.
+/**
+ * <task_card_instructions>
+ * Task Card Component
+ * 
+ * Features implemented:
+ * - Progress bar for funding status
+ * - Status badges with color coding
+ * - Category display
+ * - Transaction count
+ * - Deadline countdown
+ * - Contribution button (active tasks only)
+ * - Creator reliability rating (5-star system)
+ * 
+ * Implementation Details:
+ * - Uses shadcn/ui components for consistent design
+ * - Integrated with TanStack Query for mutations
+ * - Responsive layout with proper spacing
+ * - Truncated wallet addresses for better UX
+ * - Real-time date formatting with date-fns
+ * - Dynamic progress calculation
+ * - Status-based color coding
+ * - Star-based reliability rating with decimal score
+ * - Centered rating display below creator info
+ * 
+ * Layout Structure:
+ * - Header: Category and status badges, title, description
+ * - Content: 
+ *   - Progress bar with amounts
+ *   - Creator info and deadline row
+ *   - Centered reliability rating row
+ *   - Contributions count
+ * - Footer: Contribute button
+ * 
+ * State Management:
+ * - Uses useContributeToTask for handling contributions
+ * - Local progress calculation from task data
+ * - Disabled states based on task status
+ * 
+ * Current Limitations:
+ * - Fixed contribution amount (100 UCO)
+ * - Mock donor address
+ * - No contribution confirmation
+ * - No detailed transaction view
+ * 
+ * TODO:
+ * - Add contribution amount input
+ * - Implement wallet integration for donations
+ * - Add transaction history modal
+ * - Add contribution confirmation dialog
+ * </task_card_instructions>
+ */
+
+/**
+ * <task_filters_instructions>
+ * Task Filters Component
+ * 
+ * Features implemented:
+ * - Search filter: Filters tasks by title and description (case-insensitive)
+ * - Status filter: Filters tasks by their current status (active/funded/completed)
+ * - Category filter: Filters tasks by their category (Development/Design/Marketing/Research)
+ * 
+ * Implementation details:
+ * - Uses Zustand store for state management
+ * - All filters can be combined (search + status + category)
+ * - "All" options reset their respective filters to null
+ * - Categories match exactly with mock data capitalization
+ * - Status values are typed using TaskStatus type
+ * 
+ * Store integration:
+ * - searchQuery: Text-based filtering for title and description
+ * - statusFilter: Handles task status filtering (null means show all)
+ * - selectedCategory: Handles category filtering (null means show all)
+ * 
+ * Current limitations:
+ * - Categories are hardcoded and must match mock data exactly
+ * - Status options are fixed based on TaskStatus type
+ * 
+ * TODO:
+ * - Consider making categories dynamic based on available task categories
+ * - Add sorting functionality
+ * - Add date range filtering
+ * </task_filters_instructions>
+ */
+/**
+ * Task Grid Component
+ * 
+ * Features:
+ * - Responsive grid layout (1 column mobile, 2 tablet, 3 desktop)
+ * - Loading skeletons during data fetch
+ * - Error and empty state handling
+ * - Filtered task display from global store
+ * 
+ * Current Implementation:
+ * - Integrated with TanStack Query for data fetching
+ * - Uses Zustand store for filtered tasks
+ * - Displays TaskCard components in grid layout
+ */
+
+
+/**
+ * <api_service_instructions>
+ * API Service Layer (Currently using Mock Data)
+ * 
+ * Implements:
+ * - Task CRUD operations
+ * - Contribution handling
+ * - Wallet integration placeholders
+ * 
+ * Current Implementation:
+ * - Uses mock data with simulated network delays
+ * - Includes placeholder wallet functions for Archethic integration
+ * - Simulates task funding and status updates
+ * 
+ * API Endpoints:
+ * - getTasks: Fetches all tasks with 500ms delay
+ * - getTask: Fetches single task by ID
+ * - createTask: Creates new task with auto-generated ID
+ * - contributeToTask: Adds contribution and updates task status
+ * 
+ * Wallet Functions (Placeholder):
+ * - connect: Will handle Archethic wallet connection
+ * - disconnect: Will handle wallet disconnection
+ * - getBalance: Will fetch wallet balance
+ * 
+ * Current Limitations:
+ * - Uses in-memory mock data
+ * - No persistence between refreshes
+ * - Simplified error handling
+ * - Basic wallet integration stubs
+ * 
+ * TODO:
+ * - Implement actual Archethic blockchain integration
+ * - Add proper error handling and validation
+ * - Implement real wallet connection flow
+ * - Add transaction verification
+ * </api_service_instructions>
+ */
+
+ /**
+ * <hooks_instructions>
+ * Custom React Hooks for Task Management
+ * 
+ * Hooks implemented:
+ * - useTasksQuery: Main task fetching with store integration
+ * - useTaskQuery: Single task fetching
+ * - useCreateTask: Task creation with cache invalidation
+ * - useContributeToTask: Task contribution handling
+ * - useWalletConnection: Wallet connection management
+ * 
+ * Implementation Details:
+ * - Uses TanStack Query for data fetching and caching
+ * - Integrates with Zustand store for state management
+ * - Implements optimistic updates for contributions
+ * - Handles proper cache invalidation
+ * - Includes error handling for wallet operations
+ * 
+ * State Management:
+ * - Synchronizes API data with store state
+ * - Maintains query cache for performance
+ * - Updates filtered tasks on data changes
+ * - Handles wallet connection state
+ * 
+ * Current Limitations:
+ * - Basic error handling
+ * - No retry mechanisms
+ * - Mock wallet implementation
+ * - No offline support
+ * 
+ * TODO:
+ * - Implement proper error handling and retries
+ * - Add offline support with local storage
+ * - Integrate real wallet connection
+ * - Add query prefetching for performance
+ * </hooks_instructions>
+ */
+
+ /**
+ * Task Management Store using Zustand
+ * 
+ * Implements:
+ * - Task list management (full and filtered lists)
+ * - Category, search, and status filtering
+ * - Sorting functionality (deadline, amount, progress)
+ * - Wallet connection state management
+ * 
+ * This store serves as the central state management for the crowdfunding platform,
+ * handling both task data and UI state.
+ */

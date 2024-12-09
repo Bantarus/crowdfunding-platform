@@ -1,38 +1,3 @@
-/**
- * <task_store_instructions>
- * Task Management Store using Zustand
- * 
- * Implements:
- * - Task list management (full and filtered lists)
- * - Category, search, and status filtering with real-time updates
- * - Sorting functionality (deadline, amount, progress)
- * - Wallet connection state management
- * 
- * Filtering Implementation:
- * - Uses a central applyFilters function for consistent filtering
- * - Filters are combined using AND logic
- * - Category matching is case-sensitive and exact
- * - Search is case-insensitive and matches title/description
- * - Status matching is exact against TaskStatus type
- * 
- * State Updates:
- * - All filter changes trigger immediate task list updates
- * - Original task list is preserved in tasks array
- * - Filtered results stored in filteredTasks array
- * - Each setter maintains filter consistency
- * 
- * Debug Features:
- * - Console logging for filter operations
- * - Task rejection tracking for categories
- * - Filter state visibility
- * 
- * TODO:
- * - Implement sorting functionality
- * - Add filter combination presets
- * - Consider adding filter history
- * </task_store_instructions>
- */
-
 import { create } from 'zustand'
 import { Task, TaskStatus } from '@/types'
 
@@ -125,4 +90,4 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   setSortBy: (sort) => set({ sortBy: sort }),
   setWalletAddress: (address) => set({ walletAddress: address }),
   setWalletConnection: (isConnected) => set({ isWalletConnected: isConnected }),
-})) 
+}))

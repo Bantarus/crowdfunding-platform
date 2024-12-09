@@ -57,7 +57,7 @@ import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
 import { Button } from '../ui/button'
-//import { useContributeToTask } from '@/lib/hooks'
+import { useContributeToTask } from '@/lib/hooks'
 import { formatDistanceToNow } from 'date-fns'
 import { ReliabilityRating } from '../ui/reliability-rating'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
@@ -114,7 +114,8 @@ export function TaskCard({ task }: TaskCardProps) {
           </div>
           
           <div className="text-sm text-muted-foreground">
-            {task.transactions.length} contributions
+            {1} contributions
+
           </div>
         </div>
       </CardContent>

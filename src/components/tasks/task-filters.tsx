@@ -1,35 +1,3 @@
-/**
- * <task_filters_instructions>
- * Task Filters Component
- * 
- * Features implemented:
- * - Search filter: Filters tasks by title and description (case-insensitive)
- * - Status filter: Filters tasks by their current status (active/funded/completed)
- * - Category filter: Filters tasks by their category (Development/Design/Marketing/Research)
- * 
- * Implementation details:
- * - Uses Zustand store for state management
- * - All filters can be combined (search + status + category)
- * - "All" options reset their respective filters to null
- * - Categories match exactly with mock data capitalization
- * - Status values are typed using TaskStatus type
- * 
- * Store integration:
- * - searchQuery: Text-based filtering for title and description
- * - statusFilter: Handles task status filtering (null means show all)
- * - selectedCategory: Handles category filtering (null means show all)
- * 
- * Current limitations:
- * - Categories are hardcoded and must match mock data exactly
- * - Status options are fixed based on TaskStatus type
- * 
- * TODO:
- * - Consider making categories dynamic based on available task categories
- * - Add sorting functionality
- * - Add date range filtering
- * </task_filters_instructions>
- */
-
 'use client'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"

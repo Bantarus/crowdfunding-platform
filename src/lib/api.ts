@@ -1,47 +1,8 @@
-/**
- * <api_service_instructions>
- * API Service Layer (Currently using Mock Data)
- * 
- * Implements:
- * - Task CRUD operations
- * - Contribution handling
- * - Wallet integration placeholders
- * 
- * Current Implementation:
- * - Uses mock data with simulated network delays
- * - Includes placeholder wallet functions for Archethic integration
- * - Simulates task funding and status updates
- * 
- * API Endpoints:
- * - getTasks: Fetches all tasks with 500ms delay
- * - getTask: Fetches single task by ID
- * - createTask: Creates new task with auto-generated ID
- * - contributeToTask: Adds contribution and updates task status
- * 
- * Wallet Functions (Placeholder):
- * - connect: Will handle Archethic wallet connection
- * - disconnect: Will handle wallet disconnection
- * - getBalance: Will fetch wallet balance
- * 
- * Current Limitations:
- * - Uses in-memory mock data
- * - No persistence between refreshes
- * - Simplified error handling
- * - Basic wallet integration stubs
- * 
- * TODO:
- * - Implement actual Archethic blockchain integration
- * - Add proper error handling and validation
- * - Implement real wallet connection flow
- * - Add transaction verification
- * </api_service_instructions>
- */
-
 import { Task, Transaction } from '@/types'
 import { mockTasks } from './mock-data'
 import Archethic, { Utils, Crypto, ConnectionState } from '@archethicjs/sdk'
 
-const contractAddress = "0x0000000000000000000000000000000000000000000000000000000000000000"
+const contractAddress = "0000EAE2C633CE40125C1BD570F94F76E571CAAD24F59BF26EE45B256561A8438DF7"
 
 const archethicEndpoint = "https://testnet.archethic.net"
 const originPrivateKey = Utils.originPrivateKey
@@ -64,7 +25,7 @@ export const initializeArchethic = async () => {
 }
 
 // API endpoints - with actual Archethic blockchain calls
-    
+
 // Initialize Archethic client with required config
 const archethicClient = new Archethic(undefined)
 
@@ -72,9 +33,23 @@ const archethicClient = new Archethic(undefined)
 export const api = {
   getTasks: async (): Promise<Task[]> => {
     await initializeArchethic()
-    const tasks = await archethic.network.callFunction(contractAddress, "get_tasks_list", [])
-    console.log(tasks)
-    return tasks
+    const tasksMap = await archethic.network.callFunction(contractAddress, "get_tasks_list", [])
+    console.log('Raw tasks from contract:', tasksMap)
+    
+    // Convert the map object to an array of tasks
+    const tasksArray = Object.entries(tasksMap).map(([id, task]) => ({
+      ...(task as Task),
+      id: id, // Ensure the id is included in the task object
+    }))
+    
+    console.log('Transformed tasks array:', tasksArray)
+    return tasksArray
+ 
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        return mockTasks
+     
   },
 
   // Wallet connection management
@@ -101,6 +76,12 @@ export const api = {
           case ConnectionState.Closed:
             console.log("Wallet connection closed")
             break
+          case ConnectionState.Connecting:
+            console.log("Connecting  ...")
+            break
+          case ConnectionState.Closing:
+            console.log("Disconnecting ...")
+            break
         }
       })
 
@@ -110,6 +91,11 @@ export const api = {
       if (!archethicClient.rpcWallet) {
         throw new Error('RPC Wallet not initialized after connection')
       }
+
+      /// Listen to rpc wallet connection status changes
+      const accountSubscription = await archethicClient.rpcWallet.onCurrentAccountChange(async (account: any) => {
+        console.log(account)
+      })
 
       // Get connection details
       const { endpointUrl } = await archethicClient.rpcWallet.getEndpoint()
@@ -142,8 +128,7 @@ export const api = {
 
   // Create a new crowdfunding task
   createTask: async (
-    task: Task,
-    contractAddress: string
+    task: Task
   ): Promise<boolean> => {
     try {
       if (!archethicClient.rpcWallet) {
@@ -156,19 +141,16 @@ export const api = {
         .addRecipient(contractAddress, "create_task", [
           task.title,
           task.description,
-          task.goalAmount.toString(),
+          task.goalAmount,
           task.deadline.toISOString(),
           task.category,
         ])
 
       const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
+      console.log(walletAccount)
       
-      const signResult = await archethicClient.rpcWallet.signTransactions(
-        walletAccount.shortName,
-        "",
-        [txBuilder]
-      )
-
+      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      console.log(response)
       return true
     } catch (error) {
       console.error("Failed to create task:", error)
@@ -179,8 +161,7 @@ export const api = {
   // Fund an existing task
   fundTask: async (
     taskId: string,
-    amount: number,
-    contractAddress: string
+    amount: number
   ): Promise<boolean> => {
     try {
       if (!archethicClient.rpcWallet) {
@@ -194,11 +175,7 @@ export const api = {
 
       const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
       
-      const signResult = await archethicClient.rpcWallet.signTransactions(
-        walletAccount.shortName,
-        "",
-        [txBuilder]
-      )
+      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
 
       return true
     } catch (error) {

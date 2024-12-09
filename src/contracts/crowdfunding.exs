@@ -22,7 +22,7 @@ condition triggered_by: transaction, on: create_task(title, description, goal_am
 # Create task action
 actions triggered_by: transaction, on: create_task(title, description, goal_amount, deadline, category) do
   # Generate task ID from transaction
-  task_id = transaction
+  task_id = transaction.address
   creator_genesis_address = Chain.get_genesis_address(transaction.address)
 
   # Create task structure
@@ -68,7 +68,7 @@ condition triggered_by: transaction, on: contribute(task_id), as: [
 # Contribute action
 actions triggered_by: transaction, on: contribute(task_id) do
   tasks = State.get("tasks")
-  task = Map.get(tasks, task_id)
+  task = Map.get(tasks, String.to_hex(task_id))
   
   # Get contribution amount
   uco_amount = Map.get(transaction.uco_movements, contract.address)
@@ -101,7 +101,7 @@ end
 # Export functions for reading data
 export fun get_task(task_id) do
   tasks = State.get("tasks",Map.new())
-  Map.get(tasks, task_id)
+  Map.get(tasks, String.to_hex(task_id))
 end
 
 export fun get_tasks_list() do
@@ -110,5 +110,5 @@ end
 
 export fun get_task_contributions(task_id) do
   contributions = State.get("contributions",Map.new())
-  Map.get(contributions, task_id, Map.new())
+  Map.get(contributions, String.to_hex(task_id), Map.new())
 end 
