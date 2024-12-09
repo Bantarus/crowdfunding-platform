@@ -129,7 +129,7 @@ export function TaskCard({ task }: TaskCardProps) {
               contribute({
                 taskId: task.id,
                 amount: 100, // For demo purposes
-                donor: '0xMockDonor',
+            //    donor: '0xMockDonor',
               })
             }
           }}

@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from './api'
 import { useTaskStore } from './store'
-import { Task } from '@/types'
 import React from 'react'
 
 export const useTasksQuery = () => {
@@ -38,7 +37,7 @@ export const useCreateTaskMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ taskId, amount, donor }: { taskId: string; amount: number; donor: string }) =>
+    mutationFn: ({ taskId, amount}: { taskId: string; amount: number;  }) =>
       api.fundTask(taskId, amount),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
