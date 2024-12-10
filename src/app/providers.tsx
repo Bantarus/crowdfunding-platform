@@ -11,8 +11,15 @@ export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000,
+        staleTime: 30 * 1000,
         refetchOnWindowFocus: false,
+        retry: (failureCount, error: any) => {
+          if (error?.response?.status === 429) {
+            return failureCount < 3;
+          }
+          return false;
+        },
+        retryDelay: (attemptIndex) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
       },
     },
   }))

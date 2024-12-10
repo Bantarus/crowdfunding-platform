@@ -71,6 +71,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const progress = (task.currentAmount / task.goalAmount) * 100
 
   const statusColors = {
+    pending: 'bg-yellow-500',
     active: 'bg-blue-500',
     funded: 'bg-green-500',
     completed: 'bg-purple-500',
@@ -128,13 +129,12 @@ export function TaskCard({ task }: TaskCardProps) {
             if (task.status === 'active') {
               contribute({
                 taskId: task.id,
-                amount: 100, // For demo purposes
-            //    donor: '0xMockDonor',
+                amount: 100,
               })
             }
           }}
         >
-          Contribute
+          {task.status === 'pending' ? 'Awaiting Approval' : 'Contribute'}
         </Button>
       </CardFooter>
     </Card>

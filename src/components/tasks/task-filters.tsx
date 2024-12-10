@@ -35,6 +35,7 @@ export function TaskFilters() {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Status</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
           <SelectItem value="active">Active</SelectItem>
           <SelectItem value="funded">Funded</SelectItem>
           <SelectItem value="completed">Completed</SelectItem>

@@ -9,6 +9,8 @@ export const useTasksQuery = () => {
   const query = useQuery({
     queryKey: ['tasks'],
     queryFn: api.getTasks,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
   })
 
   React.useEffect(() => {
@@ -20,8 +22,6 @@ export const useTasksQuery = () => {
   return query
 }
 
-
-
 export const useCreateTaskMutation = () => {
   const queryClient = useQueryClient()
 
@@ -30,18 +30,21 @@ export const useCreateTaskMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
     },
+    onError: (error) => {
+      console.error('Failed to create task:', error)
+    },
   })
-} 
+}
 
- export const useContributeToTask = () => {
+export const useContributeToTask = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ taskId, amount}: { taskId: string; amount: number;  }) =>
+    mutationFn: ({ taskId, amount}: { taskId: string; amount: number }) =>
       api.fundTask(taskId, amount),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] })
       queryClient.invalidateQueries({ queryKey: ['task', variables.taskId] })
     },
   })
-} 
+}

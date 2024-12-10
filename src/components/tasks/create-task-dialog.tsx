@@ -27,6 +27,15 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import { useTasks } from "@/hooks/use-tasks"
 import { PlusCircle } from "lucide-react"
+import { format } from "date-fns"
+import { Calendar as CalendarIcon } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { cn } from "@/lib/utils"
 
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -61,6 +70,7 @@ export function CreateTaskDialog() {
     resolver: zodResolver(taskFormSchema),
     defaultValues,
   })
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
   async function onSubmit(data: TaskFormValues) {
     const task = {
@@ -82,7 +92,7 @@ export function CreateTaskDialog() {
     if (result.success) {
       toast({
         title: "Task Created",
-        description: "Your task has been created successfully.",
+        description: `Task created and contract deployed at ${result.contractAddress}`,
       })
       setOpen(false)
       form.reset()
@@ -166,10 +176,35 @@ export function CreateTaskDialog() {
                 <FormItem>
                   <FormLabel>Deadline</FormLabel>
                   <FormControl>
-                    <Input
-                      type="datetime-local"
-                      {...field}
-                    />
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value ? new Date(field.value) : undefined}
+                          onSelect={(date) => {
+                            field.onChange(date?.toISOString())
+                            setIsCalendarOpen(false)
+                          }}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

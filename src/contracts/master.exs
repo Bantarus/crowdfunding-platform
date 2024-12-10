@@ -167,7 +167,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == "@MASTER_ADDRESS"
+    Chain.get_genesis_address(previous_address) == 0x0000c80de451adf9f32e6fcedeb7b91e30cc37ae80fb4b7cca4d61ab28528517fe22
 
 
     
@@ -194,7 +194,7 @@ actions triggered_by: transaction, on: update_status(status) do
     current_amount: 0,
     deadline: content.deadline,
     category: content.category,
-    creator: "@creator_genesis_address",
+    creator: content.creator,
     status: "pending",
     created_at: content.created_at
 
@@ -271,4 +271,4 @@ end
 export fun get_task_contributions(task_id) do
   contributions = State.get("contributions",Map.new())
   Map.get(contributions, String.to_hex(task_id), Map.new())
-end 
+end

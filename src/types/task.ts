@@ -8,7 +8,7 @@ export interface Task {
   category: string
   creator: string
   creatorReliability: number
-  status: "active" | "funded" | "completed"
+  status: "pending" | "active" | "funded" | "completed"
   transactions: Transaction[]
 }
 

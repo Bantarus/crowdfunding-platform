@@ -1,4 +1,4 @@
-export type TaskStatus = 'active' | 'funded' | 'completed'
+export type TaskStatus = 'pending' | 'active' | 'funded' | 'completed'
 
 export interface Transaction {
   id: string
