@@ -1,57 +1,6 @@
-/**
- * <task_card_instructions>
- * Task Card Component
- * 
- * Features implemented:
- * - Progress bar for funding status
- * - Status badges with color coding
- * - Category display
- * - Transaction count
- * - Deadline countdown
- * - Contribution button (active tasks only)
- * - Creator reliability rating (5-star system)
- * 
- * Implementation Details:
- * - Uses shadcn/ui components for consistent design
- * - Integrated with TanStack Query for mutations
- * - Responsive layout with proper spacing
- * - Truncated wallet addresses for better UX
- * - Real-time date formatting with date-fns
- * - Dynamic progress calculation
- * - Status-based color coding
- * - Star-based reliability rating with decimal score
- * - Centered rating display below creator info
- * 
- * Layout Structure:
- * - Header: Category and status badges, title, description
- * - Content: 
- *   - Progress bar with amounts
- *   - Creator info and deadline row
- *   - Centered reliability rating row
- *   - Contributions count
- * - Footer: Contribute button
- * 
- * State Management:
- * - Uses useContributeToTask for handling contributions
- * - Local progress calculation from task data
- * - Disabled states based on task status
- * 
- * Current Limitations:
- * - Fixed contribution amount (100 UCO)
- * - Mock donor address
- * - No contribution confirmation
- * - No detailed transaction view
- * 
- * TODO:
- * - Add contribution amount input
- * - Implement wallet integration for donations
- * - Add transaction history modal
- * - Add contribution confirmation dialog
- * </task_card_instructions>
- */
-
 'use client'
 
+import { useWallet } from '@/hooks/use-wallet'
 import { Task } from '@/types'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { Badge } from '../ui/badge'
@@ -60,7 +9,8 @@ import { Button } from '../ui/button'
 import { useContributeToTask } from '@/lib/hooks'
 import { formatDistanceToNow } from 'date-fns'
 import { ReliabilityRating } from '../ui/reliability-rating'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip'
+import { useTasks } from '@/hooks/use-tasks'
+import { useToast } from '@/hooks/use-toast'
 
 interface TaskCardProps {
   task: Task
@@ -68,7 +18,62 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const { mutate: contribute } = useContributeToTask()
+  const { isQuorumMember, hasVoted, approveTask } = useTasks()
+  const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
+
+  const handleApprove = async () => {
+    const result = await approveTask(task.id)
+    if (result.success) {
+      toast({
+        title: "Task Approved",
+        description: "Your approval has been recorded",
+      })
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Approval Failed",
+        description: result.error,
+      })
+    }
+  }
+
+  const renderActionButton = () => {
+    if (task.status === 'pending') {
+      if (isQuorumMember && !hasVoted(task)) {
+        return (
+          <Button 
+            className="w-full"
+            onClick={handleApprove}
+          >
+            Approve Task
+          </Button>
+        )
+      }
+      return (
+        <Button className="w-full" disabled>
+          Awaiting Approval ({task.votes.length}/1)
+        </Button>
+      )
+    }
+
+    return (
+      <Button 
+        className="w-full" 
+        disabled={task.status !== 'active'}
+        onClick={() => {
+          if (task.status === 'active') {
+            contribute({
+              taskId: task.id,
+              amount: 100,
+            })
+          }
+        }}
+      >
+        {task.status === 'active' ? 'Contribute' : task.status === 'funded' ? 'Funded' : 'Completed'}
+      </Button>
+    )
+  }
 
   const statusColors = {
     pending: 'bg-yellow-500',
@@ -122,20 +127,7 @@ export function TaskCard({ task }: TaskCardProps) {
       </CardContent>
 
       <CardFooter>
-        <Button 
-          className="w-full" 
-          disabled={task.status !== 'active'}
-          onClick={() => {
-            if (task.status === 'active') {
-              contribute({
-                taskId: task.id,
-                amount: 100,
-              })
-            }
-          }}
-        >
-          {task.status === 'pending' ? 'Awaiting Approval' : 'Contribute'}
-        </Button>
+        {renderActionButton()}
       </CardFooter>
     </Card>
   )

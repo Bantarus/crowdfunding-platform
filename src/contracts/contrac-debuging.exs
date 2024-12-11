@@ -5,15 +5,19 @@ condition triggered_by: transaction, on: add_task(task_genesis_address,title, de
   content: (
  
     task_genesis_address = String.to_hex(task_genesis_address)
-    #task_transaction = Chain.get_transaction(task_genesis_address)
-   # valid_content? = Json.parse(task_transaction.content) == Json.parse(get_task_content(title, description, goal_amount, deadline, category))
+    task_transaction = Chain.get_transaction(task_genesis_address)
+    valid_task? = task_transaction != nil
+    valid_content? = Json.parse(task_transaction.content) == Json.parse(get_task_content(title, description, goal_amount, deadline, category))
+  
     valid_code? = false
-    #valid_code? = Code.is_same?(task_transaction.code, get_task_code() )
+    valid_code? = Code.is_same?(get_task_code(), task_transaction.code)
+    
     valid_params? = goal_amount > 0 && deadline > Time.now()
 
-   # valid_content? && 
-   # valid_code? && 
-    valid_params?
+   valid_task? &&
+   valid_content? && 
+   valid_code? && 
+   valid_params?
     
   )
 ]
@@ -47,7 +51,7 @@ actions triggered_by: transaction, on: add_task(task_genesis_address,title, desc
   tasks = Map.set(tasks, task_id, task)
   State.set("tasks", tasks)
 
- 
+ Contract.set_content(get_task_content(title, description, goal_amount, deadline, category))
 end
 
 # Vote condition
@@ -148,17 +152,25 @@ actions triggered_by: transaction, on: contribute(task_id) do
   State.set("contributions", contributions)
 end
 
-export fun get_task_content(title, description, goal_amount, deadline, category) do
+fun get_task_content(title, description, goal_amount, deadline, category) do
+
   Json.to_string(
     title: title,
     description: description,
-    goal_amount: goal_amount,
+    goalAmount: goal_amount,
     deadline: deadline,
-    category: category
+    category: category,
+    currentAmount: 0,
+    status: "pending",
+    id: "",
+    creator: "",
+    transactions: [],
+    creatorReliability: 0
   )
+  
 end
 
-export fun get_task_code() do
+fun get_task_code() do
 
 """
 @version 1
@@ -169,7 +181,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == 0x000043a99c751d028c77af5daf422e879f71f2f31fd4b3b87f7db4884b6c1f38e53c
+    Chain.get_genesis_address(previous_address) == 0x000062de15543387313c7a9f650cade24afc05fb2a0c7f98574d6dcc876410aebb9e
 
 
     
@@ -192,13 +204,14 @@ actions triggered_by: transaction, on: update_status(status) do
     id: genesis_address,
     title: content.title,
     description: content.description,
-    goal_amount: content.goal_amount,
+    goal_amount: content.goalAmount,
     current_amount: 0,
     deadline: content.deadline,
     category: content.category,
     creator: content.creator,
     status: "pending",
-    created_at: content.created_at
+    #created_at: content.created_at
+    creator_reliability: 0
 
   ]
 

@@ -1,14 +1,16 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { api } from "@/lib/api"
 import { ConnectionState } from "@archethicjs/sdk"
 import { useToast } from "@/hooks/use-toast"
+import { useTaskStore } from "@/lib/store"
 
 interface WalletState {
   isConnecting: boolean
   isConnected: boolean
   account?: string
+  genesisAddress?: string
   connectionState: ConnectionState
 }
 
@@ -17,16 +19,29 @@ export function useWallet() {
     isConnecting: false,
     isConnected: false,
     account: undefined,
+    genesisAddress: undefined,
     connectionState: ConnectionState.Closed,
   })
   const { toast } = useToast()
+  const setWalletState = useTaskStore(state => state.setWalletState)
   const previousState = useRef<ConnectionState>(ConnectionState.Closed)
+
+  useEffect(() => {
+    // Update global store when wallet state changes
+    setWalletState(
+      state.account || null,
+      state.genesisAddress || null,
+      state.isConnected
+    )
+  }, [state.account, state.genesisAddress, state.isConnected, setWalletState])
 
   const connect = async () => {
     try {
       setState(prev => ({ ...prev, isConnecting: true }))
       
       api.subscribeToConnectionState((newState) => {
+        console.log('Connection state changed:', newState)
+        
         if (previousState.current === ConnectionState.Connecting && 
             newState === ConnectionState.Closed) {
           toast({
@@ -47,6 +62,7 @@ export function useWallet() {
             isConnecting: false,
             isConnected: false,
             account: undefined,
+            genesisAddress: undefined,
           } : {})
         }))
       })
@@ -69,9 +85,14 @@ export function useWallet() {
           isConnecting: false,
           isConnected: true,
           account: result.account,
+          genesisAddress: result.genesisAddress,
           connectionState: ConnectionState.Open,
         }))
-        return { success: true, account: result.account }
+        return { 
+          success: true, 
+          account: result.account,
+          genesisAddress: result.genesisAddress 
+        }
       } else {
         setState(prev => ({ 
           ...prev, 
@@ -102,6 +123,7 @@ export function useWallet() {
         isConnecting: false,
         isConnected: false,
         account: undefined,
+        genesisAddress: undefined,
         connectionState: ConnectionState.Closed,
       })
       return { success: true }

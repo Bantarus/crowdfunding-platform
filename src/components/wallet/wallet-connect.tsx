@@ -5,7 +5,7 @@ import { useWallet } from "@/hooks/use-wallet"
 import { useToast } from "@/hooks/use-toast"
 
 export function WalletConnect() {
-  const { isConnecting, isConnected, account, connect, disconnect } = useWallet()
+  const { isConnecting, isConnected, account, genesisAddress, connect, disconnect } = useWallet()
   const { toast } = useToast()
 
   const handleConnect = async () => {

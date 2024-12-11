@@ -1,5 +1,5 @@
 import { Task, Transaction } from '@/types'
-import { mockTasks } from './mock-data'
+import { mockTasks, getQuorumAddresses } from './mock-data'
 import Archethic, { Utils, Crypto, Contract, ConnectionState } from '@archethicjs/sdk'
 import { generateTaskContract } from './contracts/templates'
 import { TaskContractParams } from '@/types/contracts'
@@ -40,7 +40,7 @@ export const api = {
     if (!masterContractAddress) {
       throw new Error('Master contract address is not defined')
     }
- /*    const tasksMap = await archethic.network.callFunction(masterContractAddress, "get_tasks_list", [])
+    const tasksMap = await archethic.network.callFunction(masterContractAddress, "get_tasks_list", [])
     console.log('Raw tasks from contract:', tasksMap)
     
     // Convert the map object to an array of tasks with correct property mapping
@@ -56,16 +56,18 @@ export const api = {
       status: taskData.status,
       createdAt: new Date(taskData.created_at * 1000),
       transactions: [],
-      creatorReliability: 0
+      creatorReliability: 0,
+      votes: taskData.votes || [],
+ 
     }))
     
-    console.log('Transformed tasks array:', tasksArray) */
-   // return tasksArray
+    console.log('Transformed tasks array:', tasksArray) 
+   return tasksArray
  
-        // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 500))
+        // Simulate network delay with mock data
+     //  await new Promise(resolve => setTimeout(resolve, 500))
 
-        return mockTasks
+     //   return mockTasks
      
   },
 
@@ -73,6 +75,7 @@ export const api = {
   connectWallet: async (): Promise<{
     connected: boolean
     account?: string
+    genesisAddress?: string
     endpoint?: string
     error?: string
   }> => {
@@ -124,9 +127,13 @@ export const api = {
       const { endpointUrl } = await archethicClient.rpcWallet.getEndpoint()
       const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
       
+      // Get the genesis address
+      const genesisAddress = walletAccount.genesisAddress
+      
       return {
         connected: true,
         account: walletAccount.shortName,
+        genesisAddress: genesisAddress,
         endpoint: endpointUrl,
       }
     } catch (error) {
@@ -287,7 +294,11 @@ export const api = {
     .new()
     .setType("contract")
     .setCode(contractCode)
-    .setContent(JSON.stringify({...task, deadline: Math.floor(task.deadline.getTime() / 1000)}))
+    .setContent(JSON.stringify({
+      ...task,
+      deadline: Math.floor(task.deadline.getTime() / 1000),
+      votes: undefined
+    }))
     .addOwnership(encryptedSecret,authorizedKeys)
     .build(taskSeed,0)
     
@@ -395,4 +406,69 @@ export const api = {
     })
   },
 
+  approveTask: async (taskId: string): Promise<boolean> => {
+    try {
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+      if (!archethicClient.rpcWallet) {
+        throw new Error('RPC Wallet not initialized')
+      }
+
+      const txBuilder = archethicClient.transaction
+        .new()
+        .setType("transfer")
+        .addRecipient(masterContractAddress, "vote", [taskId])
+
+      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      return true
+    } catch (error) {
+      console.error("Failed to approve task:", error)
+      throw error
+    }
+  },
+
+  getQuorumList: async (): Promise<string[]> => {
+    try {
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+
+      console.log("getQuorumList")
+      // For development: return mock data
+      if (process.env.NEXT_PUBLIC_USE_MOCK_DATA === 'true') {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 500))
+        return getQuorumAddresses()
+      }
+
+      // For production: get from blockchain
+      if (!archethicClient.rpcWallet) {
+        throw new Error('RPC Wallet not initialized')
+      }
+
+      const quorumList = await archethic.network.callFunction(
+        masterContractAddress,
+        "get_quorum_list",
+        []
+      )
+
+      return quorumList || []
+    } catch (error) {
+      console.error("Failed to get quorum list:", error)
+      throw error
+    }
+  },
+
+  // Add a helper method to check if an address is in the quorum
+  isQuorumMember: async (address: string): Promise<boolean> => {
+    try {
+      console.log('isQuorumMember', address)
+      const quorumList = await api.getQuorumList()
+      return quorumList.includes(address.toUpperCase())
+    } catch (error) {
+      console.error("Failed to check quorum membership:", error)
+      return false
+    }
+  }
 }

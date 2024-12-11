@@ -7,6 +7,11 @@ export interface Transaction {
   date: Date
 }
 
+export interface QuorumConfig {
+  addresses: string[];
+  requiredVotes: number;
+}
+
 export interface Task {
   id: string
   title: string
@@ -19,4 +24,5 @@ export interface Task {
   status: TaskStatus
   transactions: Transaction[]
   creatorReliability: number
+  votes: string[];
 } 

@@ -1,14 +1,47 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
 import { Task } from "@/types"
 import { useCreateTaskMutation } from "@/lib/hooks"
+import { useTaskStore } from "@/lib/store"
+import { shallow } from 'zustand/shallow'
 
 export function useTasks() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isQuorumMember, setIsQuorumMember] = useState(false)
   const createTaskMutation = useCreateTaskMutation()
+  
+  // Use separate selectors or shallow comparison
+  const genesisAddress = useTaskStore(state => state.genesisAddress)
+  const isWalletConnected = useTaskStore(state => state.isWalletConnected)
+
+  // Alternative using shallow comparison:
+  // const { genesisAddress, isWalletConnected } = useTaskStore(
+  //   state => ({
+  //     genesisAddress: state.genesisAddress,
+  //     isWalletConnected: state.isWalletConnected
+  //   }),
+  //   shallow
+  // )
+
+  useEffect(() => {
+    const checkQuorumMembership = async () => {
+      if (isWalletConnected && genesisAddress) {
+        const isMember = await api.isQuorumMember(genesisAddress)
+        setIsQuorumMember(isMember)
+      } else {
+        setIsQuorumMember(false)
+      }
+    }
+    
+    checkQuorumMembership()
+  }, [genesisAddress, isWalletConnected])
+
+  const hasVoted = (task: Task): boolean => {
+    return Boolean(genesisAddress && task.votes.includes(genesisAddress))
+  }
 
   const deployTask = async (task: Task) => {
     setIsCreating(true)
@@ -72,11 +105,29 @@ export function useTasks() {
     }
   }
 
+  const approveTask = async (taskId: string) => {
+    try {
+      if (!isQuorumMember) {
+        throw new Error("Not authorized to approve tasks")
+      }
+      await api.approveTask(taskId)
+      return { success: true }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to approve task" 
+      }
+    }
+  }
+
   return {
     isCreating,
     error,
+    isQuorumMember,
+    hasVoted,
     createTask,
     fundTask,
     deployTask,
+    approveTask,
   }
 } 

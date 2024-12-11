@@ -9,6 +9,7 @@ interface TaskStore {
   statusFilter: TaskStatus | null
   sortBy: 'deadline' | 'amount' | 'progress'
   walletAddress: string | null
+  genesisAddress: string | null
   isWalletConnected: boolean
   setTasks: (tasks: Task[]) => void
   setFilteredTasks: (tasks: Task[]) => void
@@ -16,8 +17,7 @@ interface TaskStore {
   setSearchQuery: (query: string) => void
   setStatusFilter: (status: TaskStatus | null) => void
   setSortBy: (sort: 'deadline' | 'amount' | 'progress') => void
-  setWalletAddress: (address: string | null) => void
-  setWalletConnection: (isConnected: boolean) => void
+  setWalletState: (address: string | null, genesisAddress: string | null, isConnected: boolean) => void
 }
 
 const applyFilters = (
@@ -55,6 +55,7 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   statusFilter: null,
   sortBy: 'deadline',
   walletAddress: null,
+  genesisAddress: null,
   isWalletConnected: false,
   
   setTasks: (tasks) => {
@@ -88,6 +89,10 @@ export const useTaskStore = create<TaskStore>((set, get) => ({
   },
   
   setSortBy: (sort) => set({ sortBy: sort }),
-  setWalletAddress: (address) => set({ walletAddress: address }),
-  setWalletConnection: (isConnected) => set({ isWalletConnected: isConnected }),
+  setWalletState: (address, genesisAddress, isConnected) => 
+    set({ 
+      walletAddress: address, 
+      genesisAddress: genesisAddress,
+      isWalletConnected: isConnected 
+    }),
 }))

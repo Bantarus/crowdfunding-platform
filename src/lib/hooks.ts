@@ -48,3 +48,15 @@ export const useContributeToTask = () => {
     },
   })
 }
+
+export const useApproveTask = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (taskId: string) => api.approveTask(taskId),
+    onSuccess: (_, taskId) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+      queryClient.invalidateQueries({ queryKey: ['task', taskId] })
+    },
+  })
+}

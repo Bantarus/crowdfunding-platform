@@ -1,32 +1,39 @@
 @version 1
 
 # add task condition
-condition triggered_by: transaction, on: add_task(task_genesis_address,title, description, goal_amount, deadline, category), as: [
+condition triggered_by: transaction, on: add_task(task_creation_address,title, description, goal_amount, deadline, category), as: [
   content: (
  
-    task_genesis_address = String.to_hex(task_genesis_address)
-    task_transaction = Chain.get_transaction(task_genesis_address)
+    task_creation_address = String.to_hex(task_creation_address)
+    task_transaction = Chain.get_transaction(task_creation_address)
+    valid_task? = task_transaction != nil
     valid_content? = Json.parse(task_transaction.content) == Json.parse(get_task_content(title, description, goal_amount, deadline, category))
+  
     valid_code? = false
-    valid_code? = Code.is_same?(task_transaction.code, get_task_code() )
+    valid_code? = Code.is_same?(get_task_code(), task_transaction.code)
+    
     valid_params? = goal_amount > 0 && deadline > Time.now()
 
-    valid_content? && valid_code? && valid_params?
+   valid_task? &&
+   valid_content? && 
+   valid_code? && 
+   valid_params?
     
   )
 ]
 
 # add task action
-actions triggered_by: transaction, on: add_task(task_genesis_address,title, description, goal_amount, deadline, category ) do
+actions triggered_by: transaction, on: add_task(task_creation_address,title, description, goal_amount, deadline, category ) do
  
-  task_genesis_address = String.to_hex(task_genesis_address)
+  task_creation_address = String.to_hex(task_creation_address)
+  task_transaction = Chain.get_transaction(task_creation_address)
 
   previous_address = Chain.get_previous_address(transaction)
   creator_genesis_address = Chain.get_genesis_address(previous_address)
 
   # Create task structure
   task = [
-    id: task_genesis_address,
+    id: task_creation_address,
     title: title,
     description: description,
     goal_amount: goal_amount,
@@ -35,7 +42,7 @@ actions triggered_by: transaction, on: add_task(task_genesis_address,title, desc
     category: category,
     creator: creator_genesis_address,
     status: "pending",
-    created_at: Time.now(),
+    validated_at: task_transaction.timestamp,
     contributions: 0,
     min_votes: 1
   ]
@@ -45,7 +52,7 @@ actions triggered_by: transaction, on: add_task(task_genesis_address,title, desc
   tasks = Map.set(tasks, task_id, task)
   State.set("tasks", tasks)
 
- 
+ Contract.set_content(get_task_content(title, description, goal_amount, deadline, category))
 end
 
 # Vote condition
@@ -146,17 +153,25 @@ actions triggered_by: transaction, on: contribute(task_id) do
   State.set("contributions", contributions)
 end
 
-export fun get_task_content(title, description, goal_amount, deadline, category) do
+fun get_task_content(title, description, goal_amount, deadline, category) do
+
   Json.to_string(
     title: title,
     description: description,
-    goal_amount: goal_amount,
+    goalAmount: goal_amount,
     deadline: deadline,
-    category: category
+    category: category,
+    currentAmount: 0,
+    status: "pending",
+    id: "",
+    creator: "",
+    transactions: [],
+    creatorReliability: 0
   )
+  
 end
 
-export fun get_task_code() do
+fun get_task_code() do
 
 """
 @version 1
@@ -167,7 +182,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == 0x0000c80de451adf9f32e6fcedeb7b91e30cc37ae80fb4b7cca4d61ab28528517fe22
+    Chain.get_genesis_address(previous_address) == 0x0000f3cb6969617f0cebebbe0cc3ea3824e8efee4ceafdf698b1335baa2e6e04bb95
 
 
     
@@ -190,13 +205,14 @@ actions triggered_by: transaction, on: update_status(status) do
     id: genesis_address,
     title: content.title,
     description: content.description,
-    goal_amount: content.goal_amount,
+    goal_amount: content.goalAmount,
     current_amount: 0,
     deadline: content.deadline,
     category: content.category,
     creator: content.creator,
     status: "pending",
-    created_at: content.created_at
+    #created_at: content.created_at
+    creator_reliability: 0
 
   ]
 
