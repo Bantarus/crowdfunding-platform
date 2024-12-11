@@ -41,7 +41,7 @@ export function useTasks() {
 
       const contractAddress = await deployTask(fullTask)
       
-      await createTaskMutation.mutateAsync(fullTask)
+      //await createTaskMutation.mutateAsync(fullTask)
       
       return { success: true, contractAddress }
     } catch (error) {

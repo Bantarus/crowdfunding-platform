@@ -33,13 +33,14 @@ actions triggered_by: transaction, on: update_status(status) do
     id: genesis_address,
     title: content.title,
     description: content.description,
-    goal_amount: content.goal_amount,
+    goal_amount: content.goalAmount,
     current_amount: 0,
     deadline: content.deadline,
     category: content.category,
     creator: content.creator,
     status: "pending",
-    created_at: content.created_at
+    #created_at: content.created_at
+    creator_reliability: 0
 
   ]
 
@@ -96,8 +97,7 @@ end
 # Export functions
 export fun get_task() do
   State.get("task")
-end
-`
+end`
 
 // Helper function to validate and replace placeholders
 export function generateTaskContract(placeholders: Partial<TaskContractParams>): string {

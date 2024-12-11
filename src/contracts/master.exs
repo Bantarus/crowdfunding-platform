@@ -11,7 +11,7 @@ condition triggered_by: transaction, on: add_task(task_genesis_address,title, de
     valid_code? = Code.is_same?(task_transaction.code, get_task_code() )
     valid_params? = goal_amount > 0 && deadline > Time.now()
 
-    valid_content? && valid_code? && valid_params
+    valid_content? && valid_code? && valid_params?
     
   )
 ]

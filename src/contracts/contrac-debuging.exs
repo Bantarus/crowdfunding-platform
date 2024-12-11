@@ -5,13 +5,15 @@ condition triggered_by: transaction, on: add_task(task_genesis_address,title, de
   content: (
  
     task_genesis_address = String.to_hex(task_genesis_address)
-    task_transaction = Chain.get_transaction(task_genesis_address)
-    valid_content? = Json.parse(task_transaction.content) == Json.parse(get_task_content(title, description, goal_amount, deadline, category))
+    #task_transaction = Chain.get_transaction(task_genesis_address)
+   # valid_content? = Json.parse(task_transaction.content) == Json.parse(get_task_content(title, description, goal_amount, deadline, category))
     valid_code? = false
-    valid_code? = Code.is_same?(task_transaction.code, get_task_code() )
+    #valid_code? = Code.is_same?(task_transaction.code, get_task_code() )
     valid_params? = goal_amount > 0 && deadline > Time.now()
 
-    valid_content? && valid_code? && valid_params
+   # valid_content? && 
+   # valid_code? && 
+    valid_params?
     
   )
 ]
@@ -22,7 +24,7 @@ actions triggered_by: transaction, on: add_task(task_genesis_address,title, desc
   task_genesis_address = String.to_hex(task_genesis_address)
 
   previous_address = Chain.get_previous_address(transaction)
-  creator_genesis_address = Chain.get_genesis_address(previous_address)
+ # creator_genesis_address = Chain.get_genesis_address(previous_address)
 
   # Create task structure
   task = [
@@ -33,7 +35,7 @@ actions triggered_by: transaction, on: add_task(task_genesis_address,title, desc
     current_amount: 0,
     deadline: deadline,
     category: category,
-    creator: creator_genesis_address,
+  #  creator: creator_genesis_address,
     status: "pending",
     created_at: Time.now(),
     contributions: 0,
@@ -167,7 +169,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == "@MASTER_ADDRESS"
+    Chain.get_genesis_address(previous_address) == 0x000043a99c751d028c77af5daf422e879f71f2f31fd4b3b87f7db4884b6c1f38e53c
 
 
     
@@ -194,7 +196,7 @@ actions triggered_by: transaction, on: update_status(status) do
     current_amount: 0,
     deadline: content.deadline,
     category: content.category,
-    creator: "@creator_genesis_address",
+    creator: content.creator,
     status: "pending",
     created_at: content.created_at
 
@@ -271,4 +273,4 @@ end
 export fun get_task_contributions(task_id) do
   contributions = State.get("contributions",Map.new())
   Map.get(contributions, String.to_hex(task_id), Map.new())
-end 
+end

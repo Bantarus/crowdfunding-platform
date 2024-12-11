@@ -1,6 +1,6 @@
 import { Task, Transaction } from '@/types'
 import { mockTasks } from './mock-data'
-import Archethic, { Utils, Crypto, ConnectionState } from '@archethicjs/sdk'
+import Archethic, { Utils, Crypto, Contract, ConnectionState } from '@archethicjs/sdk'
 import { generateTaskContract } from './contracts/templates'
 import { TaskContractParams } from '@/types/contracts'
 
@@ -245,31 +245,117 @@ export const api = {
       if (!archethicClient.rpcWallet) {
         throw new Error('RPC Wallet not initialized')
       }
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+      if (!process.env.NEXT_PUBLIC_FUNDING_AMOUNT) {
+        throw new Error('FUNDING_AMOUNT is not defined')
+      }
 
-      const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
-      
-      // Generate contract code with placeholders
-      const contractCode = generateTaskContract({
-        ...placeholders,
-        CREATOR_ADDRESS: walletAccount.genesisAddress,
-      })
-      
-      // Create the contract transaction
-      const txBuilder = archethicClient.transaction
-        .new()
-        .setType("contract")
-        .setCode(contractCode)
+       // 1. Generate a seed and derive address for the task contract
+    const taskSeed = Crypto.randomSecretKey() // Generate random seed
+    const taskAddress = Utils.uint8ArrayToHex(Crypto.deriveAddress(taskSeed, 0)) // Get address at index 0
+    console.log('Generated task address:', taskAddress)
+
+       // 2. Fund the generated address with UCO using wallet
+    const fundingAmount = parseInt(process.env.NEXT_PUBLIC_FUNDING_AMOUNT) * 10 ** 8 // Amount of UCO to fund (adjust as needed)
+    const fundingTx = archethicClient.transaction
+      .new()
+      .setType("transfer")
+      .addUCOTransfer(taskAddress, BigInt(fundingAmount))
+
+    // Send funding transaction through wallet
+    const fundingResult = await archethicClient.rpcWallet.sendTransaction(fundingTx)
+    console.log('Funding transaction sent:', fundingResult)
+
+    // Wait for confirmation to ensure funds are available
+    await new Promise(resolve => setTimeout(resolve, 5000)) // 5 second delay
+
+
+    // 3. Deploy the smart contract using the generated seed
+    const contractCode = generateTaskContract({
+      ...placeholders,
+      CREATOR_ADDRESS: taskAddress,
+    })
+
+     // Send contract deployment transaction directly to network
+    const storageNoncePublicKey = await archethic.network.getStorageNoncePublicKey();
+    const { encryptedSecret, authorizedKeys } = Crypto.encryptSecret(taskSeed, storageNoncePublicKey);
+  
+  //  const deployTx = await Contract.newContractTransaction(archethic,contractCode, taskSeed)
+    const deployTx = archethic.transaction
+    .new()
+    .setType("contract")
+    .setCode(contractCode)
+    .setContent(JSON.stringify({...task, deadline: Math.floor(task.deadline.getTime() / 1000)}))
+    .addOwnership(encryptedSecret,authorizedKeys)
+    .build(taskSeed,0)
+    
+    
+    let nbConfirmation = 0;
+
+      deployTx.originSign(Utils.originPrivateKey)
+      .on("requiredConfirmation", (nbConf: any) => {
+        console.log('Contract deployment confirmed:', nbConf)
+        nbConfirmation = nbConf
         
-      // Send the transaction
-      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      })
+      .on("error", (context: any, reason: any) => {
+        console.error(reason)
       
-      // Get the contract address from the response
-      const taskContractAddress = response.transactionAddress
-      
-      // Register the contract with the master contract
-      await api.registerTaskWithMaster(taskContractAddress)
-      
-      return taskContractAddress
+      })
+      .send()
+    
+   
+   console.log('deployTx address : ', Utils.uint8ArrayToHex(deployTx.address))
+
+   // Wait for sufficient confirmations before proceeding
+   await new Promise((resolve, reject) => {
+     const checkConfirmations = () => {
+       if (nbConfirmation>= 11) {
+         resolve(true);
+       } else if (nbConfirmation === -1) {
+         reject(new Error("Transaction failed"));
+       } else {
+        console.log('nbConfirmation : ', nbConfirmation)
+         setTimeout(checkConfirmations, 1000); // Check again in 1 second
+       }
+     };
+     checkConfirmations();
+   });
+
+   const taskDeployedAddress = Utils.uint8ArrayToHex(deployTx.address)
+
+     // 4. Register the task with master contract through wallet
+     console.log('masterContractAddress : ', masterContractAddress)
+     const registerTx = archethicClient.transaction
+     .new()
+     .setType("transfer")
+     .addRecipient(masterContractAddress, "add_task", [
+      taskDeployedAddress,
+       task.title,
+       task.description,
+       task.goalAmount,
+       Math.floor(task.deadline.getTime() / 1000), //unix timestamp
+       task.category
+     ])
+
+     console.log('registerTx', registerTx)
+
+    // Send registration transaction through wallet
+    const registerResult = await archethicClient.rpcWallet.sendTransaction(registerTx)
+    .then((result) => {
+      console.log('Task registration transaction sent:', result)
+    })
+    .catch((error) => {
+      console.error("Failed to register task with master:", error)
+      throw error
+    })
+    
+
+    return taskAddress
+
+        
     } catch (error) {
       console.error("Failed to deploy task contract:", error)
       throw error
