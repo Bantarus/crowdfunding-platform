@@ -1,5 +1,10 @@
 @version 1
 
+
+# smart contract params functions
+
+
+
 # add task condition
 condition triggered_by: transaction, on: add_task(task_creation_address,title, description, goal_amount, deadline, category), as: [
   content: (
@@ -44,16 +49,70 @@ actions triggered_by: transaction, on: add_task(task_creation_address,title, des
     status: "pending",
     validated_at: task_transaction.timestamp,
     contributions: 0,
-    min_votes: 1
+    min_votes: 1,
+    nb_approvals: 0,
+    nb_refusals: 0
   ]
 
   # Store task
   tasks = State.get("tasks",Map.new())
-  tasks = Map.set(tasks, task_id, task)
+  tasks = Map.set(tasks, task.id, task)
   State.set("tasks", tasks)
 
  Contract.set_content(get_task_content(title, description, goal_amount, deadline, category))
 end
+
+condition triggered_by: transaction, on: approve_task(task_creation_address), as: [
+  content: (
+
+    approver_previous_address = Chain.get_previous_address(transaction)
+    approver_genesis_address = Chain.get_genesis_address(approver_previous_address)
+
+     valid_approver? = List.in?(get_quorum_list(),approver_genesis_address)
+
+    valid_task_address? = false
+
+    if valid_approver? do
+
+      tasks = State.get("tasks", Map.new())
+      task = Map.get(tasks,String.to_hex(task_creation_address))
+
+      valid_task_address? = task != nil && task.status == "pending"
+
+    end
+
+    valid_task_address?
+
+  )
+]
+
+actions triggered_by: transaction, on: approve_task(task_creation_address) do
+
+tasks = State.get("tasks")
+task = Map.get(tasks, String.to_hex(task_creation_address))
+
+task = Map.set(task, "nb_approvals",task.nb_approvals + 1 )
+
+if task_is_approved(task.nb_approvals) do
+
+task = Map.set(task,"status","active")
+
+end
+
+tasks = Map.set(tasks,task.id, task)
+State.set("tasks",tasks)
+end
+
+condition triggered_by: transaction, on: reject_task(), as: [
+  content: ()
+]
+
+actions triggered_by: transaction, on: reject_task() do
+
+
+end
+
+
 
 # Vote condition
 condition triggered_by: transaction, on: vote(task_genesis_address), as: [
@@ -153,6 +212,8 @@ actions triggered_by: transaction, on: contribute(task_id) do
   State.set("contributions", contributions)
 end
 
+
+
 fun get_task_content(title, description, goal_amount, deadline, category) do
 
   Json.to_string(
@@ -182,8 +243,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == 0x0000f3cb6969617f0cebebbe0cc3ea3824e8efee4ceafdf698b1335baa2e6e04bb95
-
+    Chain.get_genesis_address(previous_address) == 0x0000a6646e67915fb53b26984957eb64dcf3d478fe834cba5121619a7db358885b73
 
     
   )
@@ -274,6 +334,12 @@ end
 
 end
 
+fun task_is_approved(nb_approvals) do
+
+ nb_approvals > (List.size(get_quorum_list()) / 2)
+
+end
+
 # Export functions for reading data
 export fun get_task(task_id) do
   tasks = State.get("tasks",Map.new())
@@ -287,4 +353,11 @@ end
 export fun get_task_contributions(task_id) do
   contributions = State.get("contributions",Map.new())
   Map.get(contributions, String.to_hex(task_id), Map.new())
+  
+end
+
+export fun get_quorum_list() do
+
+["0000231DC9B33875C3C64E7298835C5025D5028D536CC08D855CA7FD66766DDA0061"]
+
 end

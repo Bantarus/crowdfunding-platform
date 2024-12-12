@@ -210,8 +210,11 @@ export const api = {
       const txBuilder = archethicClient.transaction
         .new()
         .setType("transfer")
-        .addRecipient(masterContractAddress, "fund_task", [taskId, amount.toString()])
+        .addUCOTransfer(masterContractAddress, BigInt(amount * 10 ** 8))
+        .addRecipient(masterContractAddress, "fund_task", [taskId])
+        
 
+      console.log('txBuilder', txBuilder)
       const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
       
       const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
@@ -418,8 +421,9 @@ export const api = {
       const txBuilder = archethicClient.transaction
         .new()
         .setType("transfer")
-        .addRecipient(masterContractAddress, "vote", [taskId])
+        .addRecipient(masterContractAddress, "approve_task", [taskId])
 
+        console.log('txBuilder', txBuilder)
       const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
       return true
     } catch (error) {
@@ -452,7 +456,7 @@ export const api = {
         "get_quorum_list",
         []
       )
-
+      console.log("quorumList: ", quorumList)
       return quorumList || []
     } catch (error) {
       console.error("Failed to get quorum list:", error)

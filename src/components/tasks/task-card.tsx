@@ -11,6 +11,8 @@ import { formatDistanceToNow } from 'date-fns'
 import { ReliabilityRating } from '../ui/reliability-rating'
 import { useTasks } from '@/hooks/use-tasks'
 import { useToast } from '@/hooks/use-toast'
+import { useState } from 'react'
+import { ContributeDialog } from './contribute-dialog'
 
 interface TaskCardProps {
   task: Task
@@ -21,6 +23,7 @@ export function TaskCard({ task }: TaskCardProps) {
   const { isQuorumMember, hasVoted, approveTask } = useTasks()
   const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
+  const [contributeDialogOpen, setContributeDialogOpen] = useState(false)
 
   const handleApprove = async () => {
     const result = await approveTask(task.id)
@@ -58,20 +61,24 @@ export function TaskCard({ task }: TaskCardProps) {
     }
 
     return (
-      <Button 
-        className="w-full" 
-        disabled={task.status !== 'active'}
-        onClick={() => {
-          if (task.status === 'active') {
-            contribute({
-              taskId: task.id,
-              amount: 100,
-            })
-          }
-        }}
-      >
-        {task.status === 'active' ? 'Contribute' : task.status === 'funded' ? 'Funded' : 'Completed'}
-      </Button>
+      <>
+        <Button 
+          className="w-full" 
+          disabled={task.status !== 'active'}
+          onClick={() => {
+            if (task.status === 'active') {
+              setContributeDialogOpen(true)
+            }
+          }}
+        >
+          {task.status === 'active' ? 'Contribute' : task.status === 'funded' ? 'Funded' : 'Completed'}
+        </Button>
+        <ContributeDialog
+          task={task}
+          open={contributeDialogOpen}
+          onOpenChange={setContributeDialogOpen}
+        />
+      </>
     )
   }
 
