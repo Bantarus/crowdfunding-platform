@@ -60,3 +60,25 @@ export const useApproveTask = () => {
     },
   })
 }
+
+export const usePromoteTask = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation<
+    { success: boolean; error?: string },
+    Error,
+    string,
+    unknown
+  >({
+    mutationFn: async (taskId: string) => {
+      const result = await api.promoteTask(taskId)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      return result
+    },
+    onSuccess: (_, taskId) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    },
+  })
+}

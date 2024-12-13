@@ -58,6 +58,9 @@ export const api = {
       transactions: [],
       creatorReliability: 0,
       votes: taskData.votes || [],
+      contributions: taskData.nb_contributions || 0,
+      promotions: taskData.nb_promotes || 0,
+      promote_addresses: taskData.promote_addresses || []
  
     }))
     
@@ -300,7 +303,9 @@ export const api = {
     .setContent(JSON.stringify({
       ...task,
       deadline: Math.floor(task.deadline.getTime() / 1000),
-      votes: undefined
+      votes: undefined,
+      promotions: undefined,
+      contributions: undefined
     }))
     .addOwnership(encryptedSecret,authorizedKeys)
     .build(taskSeed,0)
@@ -377,36 +382,8 @@ export const api = {
   },
 
   subscribeToConnectionState: (callback: (state: ConnectionState) => void) => {
-    connectionStateCallback = callback
-    
-    if (!archethicClient.rpcWallet) {
-      console.warn("RPC Wallet not initialized, cannot subscribe to connection state changes.")
-      return
-    }
-    
-    archethicClient.rpcWallet.onconnectionstatechange(async (state) => {
-      if (connectionStateCallback) {
-        connectionStateCallback(state)
-      }
-      
-      // Handle additional logic based on connection state if needed
-      switch (state) {
-        case ConnectionState.Open:
-          console.log("Connection state: Open")
-          break
-        case ConnectionState.Closed:
-          console.log("Connection state: Closed")
-          break
-        case ConnectionState.Connecting:
-          console.log("Connection state: Connecting")
-          break
-        case ConnectionState.Closing:
-          console.log("Connection state: Closing")
-          break
-        default:
-          console.log("Unknown connection state")
-      }
-    })
+    archethicClient.rpcWallet?.onconnectionstatechange(callback)
+    return () => archethicClient.rpcWallet?.unsubscribeconnectionstatechange()
   },
 
   approveTask: async (taskId: string): Promise<boolean> => {
@@ -474,5 +451,32 @@ export const api = {
       console.error("Failed to check quorum membership:", error)
       return false
     }
-  }
+  },
+
+  promoteTask: async (taskId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+      if (!archethicClient.rpcWallet || !archethicClient.rpcWallet.getCurrentAccount()) {
+        throw new Error('RPC Wallet not initialized')
+      }
+
+      console.log('archethicClient.rpcWallet', archethicClient.rpcWallet)
+
+      const txBuilder = archethicClient.transaction
+        .new()
+        .setType("transfer")
+        .addRecipient(masterContractAddress, "promote_task", [taskId])
+
+      await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      return { success: true }
+    } catch (error) {
+      console.error("Failed to promote task:", error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to promote task" 
+      }
+    }
+  },
 }

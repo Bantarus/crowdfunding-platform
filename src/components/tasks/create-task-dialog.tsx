@@ -86,7 +86,9 @@ export function CreateTaskDialog() {
       transactions: [], // Empty initial transactions
       creatorReliability: 0, // Initial reliability score
       votes: [],
-   
+      contributions: 0,
+      promotions: 0,
+      promote_addresses: []
     }
 
     const result = await createTask(task)

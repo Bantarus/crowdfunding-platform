@@ -10,7 +10,6 @@ import { shallow } from 'zustand/shallow'
 export function useTasks() {
   const [isCreating, setIsCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isQuorumMember, setIsQuorumMember] = useState(false)
   const createTaskMutation = useCreateTaskMutation()
   
   // Use separate selectors or shallow comparison
@@ -25,19 +24,6 @@ export function useTasks() {
   //   }),
   //   shallow
   // )
-
-  useEffect(() => {
-    const checkQuorumMembership = async () => {
-      if (isWalletConnected && genesisAddress) {
-        const isMember = await api.isQuorumMember(genesisAddress)
-        setIsQuorumMember(isMember)
-      } else {
-        setIsQuorumMember(false)
-      }
-    }
-    
-    checkQuorumMembership()
-  }, [genesisAddress, isWalletConnected])
 
   const hasVoted = (task: Task): boolean => {
     return Boolean(genesisAddress && task.votes.includes(genesisAddress))
@@ -107,9 +93,6 @@ export function useTasks() {
 
   const approveTask = async (taskId: string) => {
     try {
-      if (!isQuorumMember) {
-        throw new Error("Not authorized to approve tasks")
-      }
       await api.approveTask(taskId)
       return { success: true }
     } catch (error) {
@@ -123,7 +106,6 @@ export function useTasks() {
   return {
     isCreating,
     error,
-    isQuorumMember,
     hasVoted,
     createTask,
     fundTask,

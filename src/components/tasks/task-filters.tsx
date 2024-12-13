@@ -17,6 +17,8 @@ export function TaskFilters() {
   const searchQuery = useTaskStore((state) => state.searchQuery)
   const statusFilter = useTaskStore((state) => state.statusFilter)
   const selectedCategory = useTaskStore((state) => state.selectedCategory)
+  const setSortBy = useTaskStore((state) => state.setSortBy)
+  const sortBy = useTaskStore((state) => state.sortBy)
 
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
@@ -54,6 +56,20 @@ export function TaskFilters() {
           <SelectItem value="Design">Design</SelectItem>
           <SelectItem value="Marketing">Marketing</SelectItem>
           <SelectItem value="Research">Research</SelectItem>
+        </SelectContent>
+      </Select>
+      <Select 
+        value={sortBy} 
+        onValueChange={setSortBy}
+      >
+        <SelectTrigger className="w-[180px]">
+          <SelectValue placeholder="Sort by" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="newest">Newest</SelectItem>
+          <SelectItem value="popular">Most Popular</SelectItem>
+          <SelectItem value="deadline">Deadline</SelectItem>
+          <SelectItem value="progress">Progress</SelectItem>
         </SelectContent>
       </Select>
     </div>

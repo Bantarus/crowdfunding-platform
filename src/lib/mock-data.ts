@@ -61,7 +61,9 @@ const generateMockTask = (id: number, status: TaskStatus): Task => ({
     date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
   })),
   votes: [], // Empty array for votes
- 
+  contributions: 1,
+  promotions: 0,
+  promote_addresses: []
 })
 
 // Export the mock quorum addresses for use in other files

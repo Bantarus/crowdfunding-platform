@@ -6,13 +6,15 @@ import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Progress } from '../ui/progress'
 import { Button } from '../ui/button'
-import { useContributeToTask } from '@/lib/hooks'
+import { useContributeToTask,usePromoteTask } from '@/lib/hooks'
 import { formatDistanceToNow } from 'date-fns'
 import { ReliabilityRating } from '../ui/reliability-rating'
 import { useTasks } from '@/hooks/use-tasks'
 import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 import { ContributeDialog } from './contribute-dialog'
+import { ThumbsUp } from 'lucide-react'
+import { useTaskStore } from '@/lib/store'
 
 interface TaskCardProps {
   task: Task
@@ -20,10 +22,16 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const { mutate: contribute } = useContributeToTask()
-  const { isQuorumMember, hasVoted, approveTask } = useTasks()
+  const { hasVoted, approveTask } = useTasks()
   const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
   const [contributeDialogOpen, setContributeDialogOpen] = useState(false)
+  const { mutateAsync: promote } = usePromoteTask()
+  const isQuorumMember = useTaskStore(state => state.isQuorumMember)
+  const isWalletConnected = useTaskStore(state => state.isWalletConnected)
+  const genesisAddress = useTaskStore(state => state.genesisAddress)
+  
+  const hasPromoted = genesisAddress && task.promote_addresses.includes(genesisAddress.toUpperCase()) || false
 
   const handleApprove = async () => {
     const result = await approveTask(task.id)
@@ -41,15 +49,37 @@ export function TaskCard({ task }: TaskCardProps) {
     }
   }
 
+  const handlePromote = async () => {
+    try {
+      const result = await promote(task.id)
+      if (!result.success) {
+        toast({
+          variant: "destructive",
+          title: "Failed to promote",
+          description: result.error,
+          duration: 3000,
+        })
+      }
+    } catch (error) {
+      console.error('Promote error:', error)
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Please connect your wallet to promote tasks",
+        duration: 3000,
+      })
+    }
+  }
+
   const renderActionButton = () => {
     if (task.status === 'pending') {
-      if (isQuorumMember && !hasVoted(task)) {
+      if (isWalletConnected && isQuorumMember && !hasVoted(task)) {
         return (
           <Button 
             className="w-full"
             onClick={handleApprove}
           >
-            Approve Task
+            Approve
           </Button>
         )
       }
@@ -99,6 +129,20 @@ export function TaskCard({ task }: TaskCardProps) {
           <Badge className={statusColors[task.status]}>
             {task.status}
           </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePromote}
+            disabled={hasPromoted}
+            className="flex items-center gap-1"
+          >
+            {hasPromoted ? (
+              <ThumbsUp className="h-4 w-4" fill="currentColor" />
+            ) : (
+              <ThumbsUp className="h-4 w-4" />
+            )}
+            <span>{task.promotions}</span>
+          </Button>
         </div>
         <h3 className="mt-2 text-xl font-semibold">{task.title}</h3>
         <p className="text-sm text-muted-foreground">{task.description}</p>
@@ -127,7 +171,7 @@ export function TaskCard({ task }: TaskCardProps) {
           </div>
           
           <div className="text-sm text-muted-foreground">
-            {1} contributions
+            {task.contributions} contributions
 
           </div>
         </div>

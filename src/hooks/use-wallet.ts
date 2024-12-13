@@ -25,21 +25,28 @@ export function useWallet() {
   const { toast } = useToast()
   const setWalletState = useTaskStore(state => state.setWalletState)
   const previousState = useRef<ConnectionState>(ConnectionState.Closed)
+  const unsubscribeRef = useRef<(() => void) | null>(null)
+  const setQuorumMembership = useTaskStore(state => state.setQuorumMembership)
 
+  // Handle connection state subscription
   useEffect(() => {
-    // Update global store when wallet state changes
-    setWalletState(
-      state.account || null,
-      state.genesisAddress || null,
-      state.isConnected
-    )
-  }, [state.account, state.genesisAddress, state.isConnected, setWalletState])
+    const checkQuorumMembership = async (genesisAddress: string | undefined) => {
+      if (genesisAddress) {
+        const isMember = await api.isQuorumMember(genesisAddress)
+        setQuorumMembership(isMember)
+      } else {
+        setQuorumMembership(false)
+      }
+    }
 
-  const connect = async () => {
-    try {
-      setState(prev => ({ ...prev, isConnecting: true }))
-      
-      api.subscribeToConnectionState((newState) => {
+    const setupSubscription = () => {
+      // Clean up any existing subscription
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+      }
+
+      // Set up new subscription
+      unsubscribeRef.current = api.subscribeToConnectionState((newState) => {
         console.log('Connection state changed:', newState)
         
         if (previousState.current === ConnectionState.Connecting && 
@@ -65,8 +72,29 @@ export function useWallet() {
             genesisAddress: undefined,
           } : {})
         }))
+        
+        if (newState === ConnectionState.Open) {
+          checkQuorumMembership(state.genesisAddress)
+        } else if (newState === ConnectionState.Closed) {
+          setQuorumMembership(false)
+        }
       })
+    }
 
+    setupSubscription()
+
+    // Cleanup on unmount
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current()
+      }
+    }
+  }, [toast, setQuorumMembership])
+
+  const connect = async () => {
+    try {
+      setState(prev => ({ ...prev, isConnecting: true }))
+      
       const result = await api.connectWallet()
       
       if (result.error) {
@@ -76,10 +104,16 @@ export function useWallet() {
           isConnected: false,
           connectionState: ConnectionState.Closed 
         }))
+        setWalletState(null, null, false)
+        setQuorumMembership(false)
         return { success: false, error: result.error }
       }
-      
+
       if (result.connected && result.account) {
+        // Check quorum membership immediately after successful connection
+        const isMember = await api.isQuorumMember(result.genesisAddress || '')
+        setQuorumMembership(isMember)
+
         setState(prev => ({
           ...prev,
           isConnecting: false,
@@ -88,6 +122,11 @@ export function useWallet() {
           genesisAddress: result.genesisAddress,
           connectionState: ConnectionState.Open,
         }))
+        setWalletState(
+          result.account,
+          result.genesisAddress || null,
+          true
+        )
         return { 
           success: true, 
           account: result.account,
@@ -100,6 +139,7 @@ export function useWallet() {
           isConnected: false,
           connectionState: ConnectionState.Closed
         }))
+        setWalletState(null, null, false)
         return { success: false, error: "Failed to connect" }
       }
     } catch (error) {
@@ -109,6 +149,7 @@ export function useWallet() {
         isConnected: false,
         connectionState: ConnectionState.Closed 
       }))
+      setWalletState(null, null, false)
       return { 
         success: false, 
         error: error instanceof Error ? error.message : "An unknown error occurred" 
@@ -127,7 +168,7 @@ export function useWallet() {
         connectionState: ConnectionState.Closed,
       })
       return { success: true }
-    } catch (error) {
+    } catch (error ) {
       return { 
         success: false, 
         error: error instanceof Error ? error.message : "An unknown error occurred" 

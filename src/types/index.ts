@@ -24,5 +24,8 @@ export interface Task {
   status: TaskStatus
   transactions: Transaction[]
   creatorReliability: number
-  votes: string[];
+  votes: string[]
+  contributions: number
+  promotions: number
+  promote_addresses: string[]
 } 
