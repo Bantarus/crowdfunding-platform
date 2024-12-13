@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import { useWallet } from "@/hooks/use-wallet"
 
 const taskFormSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -63,6 +64,7 @@ const defaultValues: Partial<TaskFormValues> = {
 }
 
 export function CreateTaskDialog() {
+  const { isConnected } = useWallet()
   const [open, setOpen] = useState(false)
   const { toast } = useToast()
   const { isCreating, createTask } = useTasks()
@@ -71,6 +73,15 @@ export function CreateTaskDialog() {
     defaultValues,
   })
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  if (!isConnected) {
+    return (
+      <Button variant="outline" disabled>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Connect wallet to create tasks
+      </Button>
+    )
+  }
 
   async function onSubmit(data: TaskFormValues) {
     const task = {

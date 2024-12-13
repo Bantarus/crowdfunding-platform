@@ -97,7 +97,12 @@ export const useTaskStore = create(
       set({ filteredTasks: filtered })
     },
     
-    setSortBy: (sort) => set({ sortBy: sort }),
+    setSortBy: (sort) => {
+      set({ sortBy: sort })
+      const state = get()
+      const filtered = applyFilters(state.tasks, state.selectedCategory, state.searchQuery, state.statusFilter, sort)
+      set({ filteredTasks: filtered })
+    },
     setWalletState: (address, genesisAddress, isConnected) => 
       set({ 
         walletAddress: address, 

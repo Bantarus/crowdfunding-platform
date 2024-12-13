@@ -48,10 +48,12 @@ actions triggered_by: transaction, on: add_task(task_creation_address,title, des
     creator: creator_genesis_address,
     status: "pending",
     validated_at: task_transaction.timestamp,
-    contributions: 0,
+    nb_contributions: 0,
     min_votes: 1,
     nb_approvals: 0,
-    nb_refusals: 0
+    nb_refusals: 0,
+    nb_promotes: 0,
+    promote_addresses: []
   ]
 
   # Store task
@@ -115,19 +117,22 @@ end
 
 
 # Vote condition
-condition triggered_by: transaction, on: vote(task_genesis_address), as: [
+condition triggered_by: transaction, on: promote_task(task_creation_address), as: [
   content: (
     valid? = false
+
     tasks = State.get("tasks", Map.new())
-    valid? =  Map.get(tasks,task_genesis_address) != nil && task.status == "pending"
+    task = Map.get(tasks, String.to_hex(task_creation_address))
+
+    valid? =  task != nil && task.status != "completed"
 
     if valid? do
-      # Check if voter hasn't voted yet
-      votes = Map.get(task,"votes",Map.new())
-      voter_previous_address =  Chain.get_previous_address(transaction)
-      voter_genesis_address = Chain.get_genesis_address(voter_previous_address)
 
-      valid? = Map.get(votes,voter_genesis_address) == nil
+     previous_promote_address = Chain.get_previous_address(transaction)
+     genesis_promote_address = Chain.get_genesis_address(previous_promote_address)
+
+
+      valid? = !List.in?(task.promote_addresses,genesis_promote_address)
 
     end
     
@@ -136,28 +141,24 @@ condition triggered_by: transaction, on: vote(task_genesis_address), as: [
 ]
 
 # Vote action
-actions triggered_by: transaction, on: vote(task_genesis_address) do
-  task_genesis_address = String.to_hex(task_genesis_address)
+actions triggered_by: transaction, on: promote_task(task_creation_address) do
+
+  previous_promote_address = Chain.get_previous_address(transaction)
+  genesis_promote_address = Chain.get_genesis_address(previous_promote_address)
+  task_creation_address = String.to_hex(task_creation_address)
   tasks = State.get("tasks")
-  task = Map.get(tasks, task_genesis_address )
-  votes = Map.get(task, "votes", Map.new())
+  task = Map.get(tasks, task_creation_address )
 
-  voter_previous_address =  Chain.get_previous_address(transaction)
-  voter_genesis_address = Chain.get_genesis_address(voter_previous_address)
+  promote_addresses = Map.get(task,"promote_addresses",[])
 
-  # Record vote
-  votes = Map.set(votes, voter_genesis_address, true)
+  promote_addresses = List.prepend(promote_addresses, genesis_promote_address)
   
+  task = Map.set(task, "nb_promotes", task.nb_promotes + 1 )
 
-  task = Map.set(task, "votes", votes)
+  task = Map.set(task, "promote_addresses",promote_addresses)
   
-  # Check if minimum votes reached
-  if Map.size(votes) >= task.min_votes do
-    task = Map.set(task, "status", "active")
-    
-  end
+  tasks = Map.set(tasks,task.id, task)
 
-  tasks = Map.set(tasks,task_genesis_address, task)
   State.set("tasks", tasks)
 
 end
@@ -165,16 +166,16 @@ end
 
 
 # Contribute condition
-condition triggered_by: transaction, on: contribute(task_id), as: [
+condition triggered_by: transaction, on: fund_task(task_id), as: [
   content: (
     tasks = State.get("tasks")
     task = Map.get(tasks, task_id)
-    transfered_amount = Map.get(transaction.uco_movements, contract.address)
+    transfered_amount = Map.get(transaction.uco_transfers, Chain.get_genesis_address(contract.address))
 
     # Validate task exists and is active
     task != nil && 
     task.status == "active" &&
-    Time.now() <= task.deadline &&
+    Time.now() < task.deadline &&
     # Check uco transferred > 0
     transfered_amount != nil && transfered_amount > 0
     
@@ -182,19 +183,22 @@ condition triggered_by: transaction, on: contribute(task_id), as: [
 ]
 
 # Contribute action
-actions triggered_by: transaction, on: contribute(task_id) do
+actions triggered_by: transaction, on: fund_task(task_id) do
   tasks = State.get("tasks")
   task = Map.get(tasks, String.to_hex(task_id))
   
   # Get contribution amount
-  uco_amount = Map.get(transaction.uco_movements, contract.address)
-  contributor_genesis_address = Chain.get_genesis_address(transaction.address)
+  uco_amount = Map.get(transaction.uco_transfers, Chain.get_genesis_address(contract.address))
+  contributor_previous_address = Chain.get_previous_address(transaction)
+  contributor_genesis_address = Chain.get_genesis_address(contributor_previous_address)
 
   # Update task amount
-  task = Map.set(task, "uco_amount", task.uco_amount + uco_amount)
+  task = Map.set(task, "current_amount", task.current_amount + uco_amount)
+
+  task = Map.set(task,"nb_contributions",task.nb_contributions + 1)
   
   # Update status if funded
-  if task.uco_amount >= task.goal_amount do
+  if task.current_amount >= task.goal_amount do
     task = Map.set(task, "status", "funded")
   end
   
@@ -202,14 +206,7 @@ actions triggered_by: transaction, on: contribute(task_id) do
   tasks = Map.set(tasks, task_id, task)
   State.set("tasks", tasks)
 
-  # Track contribution
-  contributions = State.get("contributions")
-  task_contributions = Map.get(contributions, task_id, Map.new())
-  contributor_amount = Map.get(task_contributions, contributor, 0)
-  
-  task_contributions = Map.set(task_contributions, "contributor_amount", contributor_amount + task.uco_amount)
-  contributions = Map.set(contributions, task_id, task_contributions)
-  State.set("contributions", contributions)
+ 
 end
 
 
@@ -243,7 +240,7 @@ condition triggered_by: transaction, on: update_status(status), as: [
 
     # can only be updated by master
     previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == 0x0000a6646e67915fb53b26984957eb64dcf3d478fe834cba5121619a7db358885b73
+    Chain.get_genesis_address(previous_address) == 0x00004035822cdcd26e571ab7bfbd3939d967128e58be4c2cedfa747394b26c5986ba
 
     
   )

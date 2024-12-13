@@ -305,7 +305,8 @@ export const api = {
       deadline: Math.floor(task.deadline.getTime() / 1000),
       votes: undefined,
       promotions: undefined,
-      contributions: undefined
+      contributions: undefined,
+      promote_addresses: undefined
     }))
     .addOwnership(encryptedSecret,authorizedKeys)
     .build(taskSeed,0)
@@ -477,6 +478,29 @@ export const api = {
         success: false, 
         error: error instanceof Error ? error.message : "Failed to promote task" 
       }
+    }
+  },
+
+  validateTask: async (taskId: string): Promise<boolean> => {
+    try {
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+      if (!archethicClient.rpcWallet) {
+        throw new Error('RPC Wallet not initialized')
+      }
+
+      const txBuilder = archethicClient.transaction
+        .new()
+        .setType("transfer")
+        .addRecipient(masterContractAddress, "validate_task", [taskId])
+
+      console.log('Validation transaction:', txBuilder)
+      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      return true
+    } catch (error) {
+      console.error("Failed to validate task:", error)
+      throw error
     }
   },
 }

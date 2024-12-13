@@ -103,6 +103,18 @@ export function useTasks() {
     }
   }
 
+  const validateTask = async (taskId: string) => {
+    try {
+      await api.validateTask(taskId)
+      return { success: true }
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to validate task" 
+      }
+    }
+  }
+
   return {
     isCreating,
     error,
@@ -111,5 +123,6 @@ export function useTasks() {
     fundTask,
     deployTask,
     approveTask,
+    validateTask,
   }
 } 

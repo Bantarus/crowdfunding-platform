@@ -22,7 +22,7 @@ interface TaskCardProps {
 
 export function TaskCard({ task }: TaskCardProps) {
   const { mutate: contribute } = useContributeToTask()
-  const { hasVoted, approveTask } = useTasks()
+  const { hasVoted, approveTask, validateTask } = useTasks()
   const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
   const [contributeDialogOpen, setContributeDialogOpen] = useState(false)
@@ -71,6 +71,22 @@ export function TaskCard({ task }: TaskCardProps) {
     }
   }
 
+  const handleValidate = async () => {
+    const result = await validateTask(task.id)
+    if (result.success) {
+      toast({
+        title: "Funding Validated",
+        description: "Your validation has been recorded",
+      })
+    } else {
+      toast({
+        variant: "destructive", 
+        title: "Validation Failed",
+        description: result.error,
+      })
+    }
+  }
+
   const renderActionButton = () => {
     if (task.status === 'pending') {
       if (isWalletConnected && isQuorumMember && !hasVoted(task)) {
@@ -90,6 +106,24 @@ export function TaskCard({ task }: TaskCardProps) {
       )
     }
 
+    if (task.status === 'funded') {
+      if (isWalletConnected && isQuorumMember && !hasVoted(task)) {
+        return (
+          <Button 
+            className="w-full"
+            onClick={handleValidate}
+          >
+            Validate Completion
+          </Button>
+        )
+      }
+      return (
+        <Button className="w-full" disabled>
+          Awaiting Validation ({task.votes.length}/3)
+        </Button>
+      )
+    }
+
     return (
       <>
         <Button 
@@ -101,7 +135,7 @@ export function TaskCard({ task }: TaskCardProps) {
             }
           }}
         >
-          {task.status === 'active' ? 'Contribute' : task.status === 'funded' ? 'Funded' : 'Completed'}
+          {task.status === 'active' ? 'Contribute' : task.status === 'completed' ? 'Completed' : 'Funded'}
         </Button>
         <ContributeDialog
           task={task}
