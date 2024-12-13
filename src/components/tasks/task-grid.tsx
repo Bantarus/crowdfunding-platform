@@ -5,10 +5,17 @@ import { useTaskStore } from '@/lib/store'
 import { TaskCard } from './task-card'
 import { Card } from '../ui/card'
 import { Skeleton } from '../ui/skeleton'
+import { Task } from '@/types'
 
-export function TaskGrid() {
+interface TaskGridProps {
+  tasks: Task[]
+  showWithdrawButton?: boolean
+}
+
+export function TaskGrid({ tasks: propTasks, showWithdrawButton }: TaskGridProps) {
   const { isLoading, error } = useTasksQuery()
   const filteredTasks = useTaskStore((state) => state.filteredTasks)
+  const tasks = propTasks?.length ? propTasks : filteredTasks
 
   if (error) {
     return (
@@ -28,7 +35,7 @@ export function TaskGrid() {
     )
   }
 
-  if (filteredTasks.length === 0) {
+  if (tasks.length === 0) {
     return (
       <Card className="p-6 text-center text-muted-foreground">
         No tasks found. Try adjusting your filters.
@@ -38,8 +45,8 @@ export function TaskGrid() {
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {filteredTasks.map((task) => (
-        <TaskCard key={task.id} task={task} />
+      {tasks.map((task) => (
+        <TaskCard key={task.id} task={task} showWithdrawButton={showWithdrawButton} />
       ))}
     </div>
   )

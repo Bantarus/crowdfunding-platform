@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { api } from "@/lib/api"
 import { ConnectionState } from "@archethicjs/sdk"
 import { useToast } from "@/hooks/use-toast"
-import { useTaskStore } from "@/lib/store"
+import { useWalletStore } from '@/lib/stores/wallet-store'
 
 interface WalletState {
   isConnecting: boolean
@@ -23,10 +23,22 @@ export function useWallet() {
     connectionState: ConnectionState.Closed,
   })
   const { toast } = useToast()
-  const setWalletState = useTaskStore(state => state.setWalletState)
+  const setWalletState = useWalletStore(state => state.setWalletState)
+  const isQuorumMember = useWalletStore(state => state.isQuorumMember)
+  const isStoreConnected = useWalletStore(state => state.isConnected)
   const previousState = useRef<ConnectionState>(ConnectionState.Closed)
   const unsubscribeRef = useRef<(() => void) | null>(null)
-  const setQuorumMembership = useTaskStore(state => state.setQuorumMembership)
+  const setQuorumMembership = useWalletStore(state => state.setQuorumMembership)
+
+  // Add debug logging
+  useEffect(() => {
+    console.log('Wallet Hook State:', {
+      hookConnected: state.isConnected,
+      storeConnected: isStoreConnected,
+      account: state.account,
+      connectionState: state.connectionState
+    })
+  }, [state.isConnected, isStoreConnected, state.account, state.connectionState])
 
   // Handle connection state subscription
   useEffect(() => {
@@ -91,13 +103,33 @@ export function useWallet() {
     }
   }, [toast, setQuorumMembership])
 
+  // Persist wallet state across navigation
+  useEffect(() => {
+    const walletAddress = useWalletStore.getState().walletAddress
+    const genesisAddress = useWalletStore.getState().genesisAddress
+    
+    // If we have a stored connection, restore it with account details
+    if (isStoreConnected && !state.isConnected) {
+      setState(prev => ({
+        ...prev,
+        isConnected: true,
+        connectionState: ConnectionState.Open,
+        account: walletAddress || undefined,
+        genesisAddress: genesisAddress || undefined
+      }))
+    }
+  }, [isStoreConnected])
+
   const connect = async () => {
     try {
+      console.log('Connecting wallet...')
       setState(prev => ({ ...prev, isConnecting: true }))
       
       const result = await api.connectWallet()
+      console.log('Connection result:', result)
       
       if (result.error) {
+        console.log('Connection error:', result.error)
         setState(prev => ({ 
           ...prev, 
           isConnecting: false,
@@ -110,6 +142,10 @@ export function useWallet() {
       }
 
       if (result.connected && result.account) {
+        console.log('Connection successful:', {
+          account: result.account,
+          genesisAddress: result.genesisAddress
+        })
         // Check quorum membership immediately after successful connection
         const isMember = await api.isQuorumMember(result.genesisAddress || '')
         setQuorumMembership(isMember)
@@ -143,6 +179,7 @@ export function useWallet() {
         return { success: false, error: "Failed to connect" }
       }
     } catch (error) {
+      console.error('Connection error:', error)
       setState(prev => ({ 
         ...prev, 
         isConnecting: false,
@@ -178,6 +215,7 @@ export function useWallet() {
 
   return {
     ...state,
+    isQuorumMember,
     connect,
     disconnect,
   }

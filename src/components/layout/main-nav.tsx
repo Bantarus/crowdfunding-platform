@@ -11,7 +11,7 @@ export function MainNav({
         Dashboard
       </Link>
       <Link href="/tasks" className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
-        Tasks
+        My Tasks
       </Link>
     </nav>
   )

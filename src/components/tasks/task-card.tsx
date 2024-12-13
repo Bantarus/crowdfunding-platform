@@ -18,18 +18,18 @@ import { useTaskStore } from '@/lib/store'
 
 interface TaskCardProps {
   task: Task
+  showWithdrawButton?: boolean
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
+  const { isConnected, isQuorumMember, genesisAddress } = useWallet()
   const { mutate: contribute } = useContributeToTask()
   const { hasVoted, approveTask, validateTask } = useTasks()
   const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
   const [contributeDialogOpen, setContributeDialogOpen] = useState(false)
   const { mutateAsync: promote } = usePromoteTask()
-  const isQuorumMember = useTaskStore(state => state.isQuorumMember)
-  const isWalletConnected = useTaskStore(state => state.isWalletConnected)
-  const genesisAddress = useTaskStore(state => state.genesisAddress)
+
   
   const hasPromoted = genesisAddress && task.promote_addresses.includes(genesisAddress.toUpperCase()) || false
 
@@ -87,9 +87,13 @@ export function TaskCard({ task }: TaskCardProps) {
     }
   }
 
+  const handleWithdraw = async () => {
+    // Implement withdraw funds logic
+  }
+
   const renderActionButton = () => {
     if (task.status === 'pending') {
-      if (isWalletConnected && isQuorumMember && !hasVoted(task)) {
+      if (isConnected && isQuorumMember && !hasVoted(task)) {
         return (
           <Button 
             className="w-full"
@@ -107,20 +111,32 @@ export function TaskCard({ task }: TaskCardProps) {
     }
 
     if (task.status === 'funded') {
-      if (isWalletConnected && isQuorumMember && !hasVoted(task)) {
-        return (
-          <Button 
-            className="w-full"
-            onClick={handleValidate}
-          >
-            Validate Completion
-          </Button>
-        )
-      }
       return (
-        <Button className="w-full" disabled>
-          Awaiting Validation ({task.votes.length}/3)
-        </Button>
+        <div className="space-y-2">
+          {isConnected && isQuorumMember && !hasVoted(task) && (
+            <Button 
+              className="w-full"
+              onClick={handleValidate}
+            >
+              Validate Completion
+            </Button>
+          )}
+          {task.creator === genesisAddress && !task.withdrawn && (
+            <Button 
+              className="w-full"
+              variant="secondary"
+              onClick={handleWithdraw}
+            >
+              Withdraw Funds
+            </Button>
+          )}
+          {(!isConnected || !isQuorumMember || hasVoted(task)) && 
+           !(task.creator === genesisAddress && !task.withdrawn) && (
+            <Button className="w-full" disabled>
+              Awaiting Validation ({task.votes.length}/3)
+            </Button>
+          )}
+        </div>
       )
     }
 

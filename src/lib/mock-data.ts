@@ -63,7 +63,8 @@ const generateMockTask = (id: number, status: TaskStatus): Task => ({
   votes: [], // Empty array for votes
   contributions: 1,
   promotions: 0,
-  promote_addresses: []
+  promote_addresses: [],
+  withdrawn: false
 })
 
 // Export the mock quorum addresses for use in other files

@@ -14,7 +14,7 @@ export default function DashboardPage() {
       </div>
       <div className="space-y-4">
         <TaskFilters />
-        <TaskGrid />
+        <TaskGrid tasks={[]} />
       </div>
     </DashboardLayout>
   )

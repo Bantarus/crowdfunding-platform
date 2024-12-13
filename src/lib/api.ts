@@ -60,8 +60,9 @@ export const api = {
       votes: taskData.votes || [],
       contributions: taskData.nb_contributions || 0,
       promotions: taskData.nb_promotes || 0,
-      promote_addresses: taskData.promote_addresses || []
- 
+      promote_addresses: taskData.promote_addresses || [],
+      withdrawn: taskData.withdrawn || false
+
     }))
     
     console.log('Transformed tasks array:', tasksArray) 
@@ -306,7 +307,8 @@ export const api = {
       votes: undefined,
       promotions: undefined,
       contributions: undefined,
-      promote_addresses: undefined
+      promote_addresses: undefined,
+      withdrawn: undefined
     }))
     .addOwnership(encryptedSecret,authorizedKeys)
     .build(taskSeed,0)
@@ -503,4 +505,10 @@ export const api = {
       throw error
     }
   },
+
+  getCreatorTasks: async (creatorAddress?: string) => {
+    if (!creatorAddress) return []
+    const tasks = await api.getTasks()
+    return tasks.filter(task => task.creator === creatorAddress)
+  }
 }

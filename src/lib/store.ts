@@ -9,18 +9,12 @@ interface TaskStore {
   searchQuery: string
   statusFilter: TaskStatus | null
   sortBy: string
-  walletAddress: string | null
-  genesisAddress: string | null
-  isWalletConnected: boolean
-  isQuorumMember: boolean
   setTasks: (tasks: Task[]) => void
   setFilteredTasks: (tasks: Task[]) => void
   setSelectedCategory: (category: string | null) => void
   setSearchQuery: (query: string) => void
   setStatusFilter: (status: TaskStatus | null) => void
   setSortBy: (sort: string) => void
-  setWalletState: (address: string | null, genesisAddress: string | null, isConnected: boolean) => void
-  setQuorumMembership: (isMember: boolean) => void
 }
 
 const applyFilters = (
@@ -62,10 +56,6 @@ export const useTaskStore = create(
     searchQuery: '',
     statusFilter: null,
     sortBy: 'newest',
-    walletAddress: null,
-    genesisAddress: null,
-    isWalletConnected: false,
-    isQuorumMember: false,
     
     setTasks: (tasks) => {
       set({ tasks })
@@ -103,14 +93,5 @@ export const useTaskStore = create(
       const filtered = applyFilters(state.tasks, state.selectedCategory, state.searchQuery, state.statusFilter, sort)
       set({ filteredTasks: filtered })
     },
-    setWalletState: (address, genesisAddress, isConnected) => 
-      set({ 
-        walletAddress: address, 
-        genesisAddress: genesisAddress,
-        isWalletConnected: isConnected 
-      }),
-    setQuorumMembership: (isMember) => set({ isQuorumMember: isMember }),
-    
-   
   }))
 )

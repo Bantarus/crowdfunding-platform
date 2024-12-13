@@ -99,7 +99,8 @@ export function CreateTaskDialog() {
       votes: [],
       contributions: 0,
       promotions: 0,
-      promote_addresses: []
+      promote_addresses: [],
+      withdrawn: false
     }
 
     const result = await createTask(task)

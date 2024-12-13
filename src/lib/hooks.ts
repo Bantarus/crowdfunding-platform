@@ -82,3 +82,11 @@ export const usePromoteTask = () => {
     },
   })
 }
+
+export const useCreatorTasks = (creatorAddress?: string) => {
+  return useQuery({
+    queryKey: ['tasks', 'creator', creatorAddress],
+    queryFn: () => api.getCreatorTasks(creatorAddress),
+    enabled: !!creatorAddress
+  })
+}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { api } from "@/lib/api"
 import { Task } from "@/types"
 import { useCreateTaskMutation } from "@/lib/hooks"
-import { useTaskStore } from "@/lib/store"
+import { useWalletStore } from "@/lib/stores/wallet-store"
 import { shallow } from 'zustand/shallow'
 
 export function useTasks() {
@@ -13,8 +13,8 @@ export function useTasks() {
   const createTaskMutation = useCreateTaskMutation()
   
   // Use separate selectors or shallow comparison
-  const genesisAddress = useTaskStore(state => state.genesisAddress)
-  const isWalletConnected = useTaskStore(state => state.isWalletConnected)
+  const genesisAddress = useWalletStore(state => state.genesisAddress)
+  const isConnected = useWalletStore(state => state.isConnected)
 
   // Alternative using shallow comparison:
   // const { genesisAddress, isWalletConnected } = useTaskStore(

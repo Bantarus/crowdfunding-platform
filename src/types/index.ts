@@ -27,5 +27,6 @@ export interface Task {
   votes: string[]
   contributions: number
   promotions: number
-  promote_addresses: string[]
+  promote_addresses: string[],
+  withdrawn: boolean
 } 
