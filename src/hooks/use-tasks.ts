@@ -115,6 +115,18 @@ export function useTasks() {
     }
   }
 
+  const withdrawFunds = async (taskId: string) => {
+    try {
+      await api.withdrawTaskFunds(taskId)
+      return { success: true }
+    } catch (error) {
+      return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to withdraw funds" 
+    }
+  }
+}
+
   return {
     isCreating,
     error,
@@ -124,5 +136,6 @@ export function useTasks() {
     deployTask,
     approveTask,
     validateTask,
+    withdrawFunds
   }
-} 
+}

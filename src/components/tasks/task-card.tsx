@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast'
 import { useState } from 'react'
 import { ContributeDialog } from './contribute-dialog'
 import { ThumbsUp } from 'lucide-react'
-import { useTaskStore } from '@/lib/store'
 
 interface TaskCardProps {
   task: Task
@@ -24,7 +23,7 @@ interface TaskCardProps {
 export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
   const { isConnected, isQuorumMember, genesisAddress } = useWallet()
   const { mutate: contribute } = useContributeToTask()
-  const { hasVoted, approveTask, validateTask } = useTasks()
+  const { hasVoted, approveTask, validateTask, withdrawFunds } = useTasks()
   const { toast } = useToast()
   const progress = (task.currentAmount / task.goalAmount) * 100
   const [contributeDialogOpen, setContributeDialogOpen] = useState(false)
@@ -88,7 +87,31 @@ export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
   }
 
   const handleWithdraw = async () => {
-    // Implement withdraw funds logic
+    try {
+      const result = await withdrawFunds(task.id)
+      if (result.success) {
+        toast({
+          title: "Withdrawal Successful",
+          description: "Funds have been withdrawn to your wallet",
+          duration: 3000,
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Withdrawal Failed", 
+          description: result.error,
+          duration: 3000,
+        })
+      }
+    } catch (error) {
+      console.error('Withdraw error:', error)
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Please connect your wallet to withdraw funds",
+        duration: 3000,
+      })
+    }
   }
 
   const renderActionButton = () => {
@@ -121,22 +144,32 @@ export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
               Validate Completion
             </Button>
           )}
-          {task.creator === genesisAddress && !task.withdrawn && (
-            <Button 
-              className="w-full"
-              variant="secondary"
-              onClick={handleWithdraw}
-            >
-              Withdraw Funds
-            </Button>
-          )}
-          {(!isConnected || !isQuorumMember || hasVoted(task)) && 
-           !(task.creator === genesisAddress && !task.withdrawn) && (
+          {(!isConnected || !isQuorumMember || hasVoted(task)) && (
             <Button className="w-full" disabled>
               Awaiting Validation ({task.votes.length}/3)
             </Button>
           )}
         </div>
+      )
+    }
+
+    if (task.status === 'completed') {
+     
+      if (task.creator === genesisAddress?.toUpperCase() && !task.withdrawn && showWithdrawButton) {
+        return (
+          <Button 
+            className="w-full"
+            variant="secondary"
+            onClick={handleWithdraw}
+          >
+            Withdraw Funds
+          </Button>
+        )
+      }
+      return (
+        <Button className="w-full" disabled>
+          Completed
+        </Button>
       )
     }
 
@@ -227,8 +260,10 @@ export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
         </div>
       </CardContent>
 
-      <CardFooter>
-        {renderActionButton()}
+      <CardFooter className="flex justify-center">
+        <div className="w-full">
+          {renderActionButton()}
+        </div>
       </CardFooter>
     </Card>
   )

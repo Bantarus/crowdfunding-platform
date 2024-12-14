@@ -127,6 +127,7 @@ export const api = {
         console.log(account)
       })
 
+    
       // Get connection details
       const { endpointUrl } = await archethicClient.rpcWallet.getEndpoint()
       const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
@@ -266,6 +267,9 @@ export const api = {
         throw new Error('FUNDING_AMOUNT is not defined')
       }
 
+      const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
+      console.log('walletAccount', walletAccount)
+
        // 1. Generate a seed and derive address for the task contract
     const taskSeed = Crypto.randomSecretKey() // Generate random seed
     const taskAddress = Utils.uint8ArrayToHex(Crypto.deriveAddress(taskSeed, 0)) // Get address at index 0
@@ -289,7 +293,7 @@ export const api = {
     // 3. Deploy the smart contract using the generated seed
     const contractCode = generateTaskContract({
       ...placeholders,
-      CREATOR_ADDRESS: taskAddress,
+      CREATOR_ADDRESS: walletAccount.genesisAddress.toUpperCase(),
     })
 
      // Send contract deployment transaction directly to network
@@ -303,6 +307,7 @@ export const api = {
     .setCode(contractCode)
     .setContent(JSON.stringify({
       ...task,
+      creator: walletAccount.genesisAddress.toUpperCase(),
       deadline: Math.floor(task.deadline.getTime() / 1000),
       votes: undefined,
       promotions: undefined,
@@ -510,5 +515,30 @@ export const api = {
     if (!creatorAddress) return []
     const tasks = await api.getTasks()
     return tasks.filter(task => task.creator === creatorAddress)
+  },
+
+  withdrawTaskFunds: async (taskId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      if (!masterContractAddress) {
+        throw new Error('Master contract address is not defined')
+      }
+      if (!archethicClient.rpcWallet) {
+        throw new Error('RPC Wallet not initialized')
+      }
+
+      const txBuilder = archethicClient.transaction
+        .new()
+        .setType("transfer")
+        .addRecipient(taskId, "withdraw", [])
+
+      const response = await archethicClient.rpcWallet.sendTransaction(txBuilder)
+      return { success: true }
+    } catch (error) {
+      console.error("Failed to withdraw funds:", error)
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to withdraw funds"
+      }
+    }
   }
 }

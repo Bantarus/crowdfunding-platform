@@ -62,7 +62,7 @@ export function CreatorProfile({ address, stats, tasks }: CreatorProfileProps) {
 
       <div className="space-y-4">
         <h2 className="text-2xl font-bold tracking-tight">My Tasks</h2>
-        <TaskGrid tasks={tasks} showWithdrawButton />
+        <TaskGrid tasks={tasks} showWithdrawButton={true} />
       </div>
     </div>
   )

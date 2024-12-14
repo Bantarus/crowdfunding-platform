@@ -5,12 +5,14 @@ export const TASK_CONTRACT_TEMPLATE = (placeholders: TaskContractParams) =>
 `@version 1
 
 # update status condition
-condition triggered_by: transaction, on: update_status(status), as: [
+condition triggered_by: transaction, on: init(creation_address, title, description, goal_amount, deadline, category), as: [
   content: (
 
-    # can only be updated by master
-    previous_address = Chain.get_previous_address()
-    Chain.get_genesis_address(previous_address) == 0x${placeholders.MASTER_ADDRESS}
+    # can only be init by master
+    previous_address = Chain.get_previous_address(transaction)
+    genesis_address = Chain.get_genesis_address(previous_address)
+    task = State.get("task")
+    task == nil && genesis_address == 0x${placeholders.MASTER_ADDRESS}
 
 
     
@@ -18,76 +20,94 @@ condition triggered_by: transaction, on: update_status(status), as: [
 ]
 
 # update status action
-actions triggered_by: transaction, on: update_status(status) do
-  task = State.get("task", Map.new())
-
-  # if first sc call init the state with genesis address content
-  if task == nil do 
-
-  previous_address = Chain.get_previous_address(transaction)
-  genesis_address = Chain.get_genesis_address(previous_address) 
-  genesis_transaction = Chain.get_transaction(genesis_address)
-  content = Json.parse(genesis_transaction.content)
+actions triggered_by: transaction, on: init(creation_address, title, description, goal_amount, deadline, category) do
+  
+  # init the state with creation address content
+ 
+  genesis_address = Chain.get_genesis_address(creation_address) 
+  creation_transaction = Chain.get_transaction(creation_address)
 
   task = [
-    id: genesis_address,
-    title: content.title,
-    description: content.description,
-    goal_amount: content.goalAmount,
+    id: String.to_hex(creation_address),
+    title: title,
+    description: description,
+    goal_amount: goal_amount,
     current_amount: 0,
-    deadline: content.deadline,
-    category: content.category,
-    creator: content.creator,
+    deadline: deadline,
+    category: category,
+    creator: get_creator(),
     status: "pending",
-    #created_at: content.created_at
-    creator_reliability: 0
+    created_at: creation_transaction.timestamp
 
   ]
 
-  end
-
-task = Map.set(task,"status", status)
-
+ 
 State.set("task", task)
  
 end
 
-# Contribute condition
-condition triggered_by: transaction, on: deposit(), as: [
+# update_status condition
+condition triggered_by: transaction, on: update_status(new_status), as: [
   content: (
-    task = State.get("task")
-    transfered_amount = Map.get(transaction.uco_movements, contract.address)
+    
 
-    task.status == "active" &&
-    Time.now() <= task.deadline &&
-    transfered_amount != nil && 
-    transfered_amount > 0
+    # can only be init by master and have to init first
+    previous_address = Chain.get_previous_address(transaction)
+    genesis_address = Chain.get_genesis_address(previous_address)
+    task = State.get("task")
+    task != nil && task.status != new_status && genesis_address == 0x${placeholders.MASTER_ADDRESS}
+
+
   )
 ]
 
-# Contribute action
-actions triggered_by: transaction, on: deposit() do
+# update status action
+actions triggered_by: transaction, on: update_status(new_status) do
+
   task = State.get("task")
-  
-  # Get contribution amount
-  uco_amount = Map.get(transaction.uco_movements, contract.address)
-  contributor = Chain.get_genesis_address(transaction.address)
-
-  # Update task amount
-  task = Map.set(task, "current_amount", task.current_amount + uco_amount)
-  
-  # Update status if funded
-  if task.current_amount >= task.goal_amount do
-    task = Map.set(task, "status", "funded")
-  end
-  
+  task = Map.set(task,"status", new_status)
   State.set("task", task)
+  
+end
 
-  # Track contribution
-  contributions = State.get("contributions", Map.new())
-  contributor_amount = Map.get(contributions, contributor, 0)
-  contributions = Map.set(contributions, contributor, contributor_amount + uco_amount)
-  State.set("contributions", contributions)
+
+#withdraw condition
+condition triggered_by: transaction, on: withdraw(), as: [
+  content: (
+    valid? = false
+
+    previous_address = Chain.get_previous_address(transaction)
+    genesis_address = Chain.get_genesis_address(previous_address)
+    task = State.get("task")
+
+    valid? = task != nil && task.status == "completed" && genesis_address == String.to_hex(task.creator)
+
+
+    if valid? do
+
+      
+      valid? =  Chain.get_uco_balance(contract.address) > 0
+
+
+    end
+
+    valid?
+    
+    
+  )
+]
+
+# withdraw action
+actions triggered_by: transaction, on: withdraw() do
+
+  
+  task = State.get("task")
+
+  Contract.set_type("transfer")
+  Contract.set_content("withdraw task funds")
+  Contract.add_uco_transfer(to: transaction.address, amount: Chain.get_uco_balance(contract.address))
+  
+
 end
 
 fun init_task() do
@@ -95,6 +115,10 @@ fun init_task() do
 end
 
 # Export functions
+export fun get_creator() do
+  0x${placeholders.CREATOR_ADDRESS}
+end
+
 export fun get_task() do
   State.get("task")
 end`
