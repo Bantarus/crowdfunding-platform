@@ -1,6 +1,6 @@
 'use client'
 
-import { useWallet } from '@/hooks/use-wallet'
+import { useWalletStore } from '@/lib/stores/wallet-store'
 import { Task } from '@/types'
 import { Card, CardContent, CardFooter, CardHeader } from '../ui/card'
 import { Badge } from '../ui/badge'
@@ -11,17 +11,25 @@ import { formatDistanceToNow } from 'date-fns'
 import { ReliabilityRating } from '../ui/reliability-rating'
 import { useTasks } from '@/hooks/use-tasks'
 import { useToast } from '@/hooks/use-toast'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { ContributeDialog } from './contribute-dialog'
 import { ThumbsUp } from 'lucide-react'
+import { WalletStore } from '@/lib/stores/wallet-store'
 
 interface TaskCardProps {
   task: Task
   showWithdrawButton?: boolean
 }
 
+// Separate selectors for each value
+const selectIsConnected = (state: WalletStore) => state.isConnected
+const selectIsQuorumMember = (state: WalletStore) => state.isQuorumMember
+const selectGenesisAddress = (state: WalletStore) => state.genesisAddress
+
 export function TaskCard({ task, showWithdrawButton }: TaskCardProps) {
-  const { isConnected, isQuorumMember, genesisAddress } = useWallet()
+  const isConnected = useWalletStore(selectIsConnected)
+  const isQuorumMember = useWalletStore(selectIsQuorumMember)
+  const genesisAddress = useWalletStore(selectGenesisAddress)
   const { mutate: contribute } = useContributeToTask()
   const { hasVoted, approveTask, validateTask, withdrawFunds } = useTasks()
   const { toast } = useToast()

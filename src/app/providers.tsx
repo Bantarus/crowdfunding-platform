@@ -4,9 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ThemeProvider } from '@/components/theme-provider'
 import { useState } from 'react'
 import { useArchethic } from '@/hooks/useArchethic'
+import { WalletProvider } from '@/providers/WalletProvider'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   useArchethic();
+  
 
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
@@ -32,7 +34,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
         enableSystem
         disableTransitionOnChange
       >
-        {children}
+        <WalletProvider>
+          {children}
+        </WalletProvider>
       </ThemeProvider>
     </QueryClientProvider>
   )

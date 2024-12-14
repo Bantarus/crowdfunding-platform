@@ -89,27 +89,7 @@ export const api = {
       }
       console.log('archethicClient', archethicClient)
 
-      // Listen to wallet connection state changes
-      archethicClient.rpcWallet.onconnectionstatechange(async (state) => {
-        if (!archethicClient.rpcWallet) return
-
-        switch (state) {
-          case ConnectionState.Open:
-            const { endpointUrl } = await archethicClient.rpcWallet.getEndpoint()
-            const walletAccount = await archethicClient.rpcWallet.getCurrentAccount()
-            console.log(`Connected as ${walletAccount.shortName} to ${endpointUrl}`)
-            break
-          case ConnectionState.Closed:
-            console.log("Wallet connection closed")
-            break
-          case ConnectionState.Connecting:
-            console.log("Connecting  ...")
-            break
-          case ConnectionState.Closing:
-            console.log("Disconnecting ...")
-            break
-        }
-      })
+    
 
       // Attempt connection
       await archethicClient.connect().catch((error) => {
@@ -121,11 +101,6 @@ export const api = {
       if (!archethicClient.rpcWallet) {
         throw new Error('RPC Wallet not initialized after connection')
       }
-
-      /// Listen to rpc wallet connection status changes
-      const accountSubscription = await archethicClient.rpcWallet.onCurrentAccountChange(async (account: any) => {
-        console.log(account)
-      })
 
     
       // Get connection details
@@ -154,8 +129,8 @@ export const api = {
         throw new Error('RPC Wallet not initialized')
       }
 
-      await archethicClient.rpcWallet.close()
-      archethicClient.rpcWallet.unsubscribeconnectionstatechange()
+    await archethicClient.rpcWallet.close()
+     // archethicClient.rpcWallet.unsubscribeconnectionstatechange()
     } catch (error) {
       console.error("Failed to disconnect wallet:", error)
     }
@@ -391,7 +366,10 @@ export const api = {
 
   subscribeToConnectionState: (callback: (state: ConnectionState) => void) => {
     archethicClient.rpcWallet?.onconnectionstatechange(callback)
-    return () => archethicClient.rpcWallet?.unsubscribeconnectionstatechange()
+    return async () => {
+     
+      archethicClient.rpcWallet?.unsubscribeconnectionstatechange()
+    }
   },
 
   approveTask: async (taskId: string): Promise<boolean> => {
