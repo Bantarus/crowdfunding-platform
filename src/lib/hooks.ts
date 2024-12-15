@@ -87,6 +87,8 @@ export const useCreatorTasks = (creatorAddress?: string) => {
   return useQuery({
     queryKey: ['tasks', 'creator', creatorAddress],
     queryFn: () => api.getCreatorTasks(creatorAddress),
-    enabled: !!creatorAddress
+    enabled: !!creatorAddress,
+    staleTime: 30 * 1000,
+    refetchInterval: 30 * 1000,
   })
 }

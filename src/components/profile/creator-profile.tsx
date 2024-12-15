@@ -41,7 +41,7 @@ export function CreatorProfile({ address, stats, tasks }: CreatorProfileProps) {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Builder Rank</CardTitle>
+            <CardTitle className="text-sm font-medium">Tinker Rank</CardTitle>
           </CardHeader>
           <CardContent>
             <Badge variant="secondary" className="text-lg">

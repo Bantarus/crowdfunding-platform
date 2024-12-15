@@ -9,12 +9,18 @@ import { useRouter } from "next/navigation"
 import { getRank, calculateReliability } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
 import { Card } from "@/components/ui/card"
+import { useTaskStore } from "@/lib/store"
 
 export default function TasksPage() {
   const { toast } = useToast()
   const { genesisAddress, isConnected } = useWalletStore()
   const router = useRouter()
+  
+  console.log('Current genesis address:', genesisAddress)
+  
   const { data: creatorTasks, isLoading } = useCreatorTasks(genesisAddress || undefined)
+  
+  console.log('Creator tasks:', creatorTasks)
 
   useEffect(() => {
     if (!isConnected) {

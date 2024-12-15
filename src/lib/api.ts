@@ -31,6 +31,8 @@ export const initializeArchethic = async () => {
 // Initialize Archethic client with required config
 const archethicClient = new Archethic(undefined)
 
+
+
 const connectionStateCallback: ((state: ConnectionState) => void) | null = null;
 
 // Mock API endpoints - Replace with actual Archethic blockchain calls
@@ -89,8 +91,7 @@ export const api = {
       }
       console.log('archethicClient', archethicClient)
 
-    
-
+     
       // Attempt connection
       await archethicClient.connect().catch((error) => {
         console.error('Error connecting to Archethic:', error)
@@ -101,6 +102,12 @@ export const api = {
       if (!archethicClient.rpcWallet) {
         throw new Error('RPC Wallet not initialized after connection')
       }
+
+      await archethicClient.rpcWallet.setOrigin({
+        name: "unTink",
+        url: "https://testnet.untink.org"
+      });
+
 
     
       // Get connection details
@@ -491,8 +498,19 @@ export const api = {
 
   getCreatorTasks: async (creatorAddress?: string) => {
     if (!creatorAddress) return []
-    const tasks = await api.getTasks()
-    return tasks.filter(task => task.creator === creatorAddress)
+    
+    try {
+      const tasks = await api.getTasks()
+      // Make sure to compare addresses in the same case
+      const filteredTasks = tasks.filter(task => 
+        task.creator.toUpperCase() === creatorAddress.toUpperCase()
+      )
+      console.log('Filtered tasks for creator:', creatorAddress, filteredTasks)
+      return filteredTasks
+    } catch (error) {
+      console.error("Failed to get creator tasks:", error)
+      return []
+    }
   },
 
   withdrawTaskFunds: async (taskId: string): Promise<{ success: boolean; error?: string }> => {

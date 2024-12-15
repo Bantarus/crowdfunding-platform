@@ -65,7 +65,8 @@ export function useWallet() {
           account: result.account,
           genesisAddress: result.genesisAddress
         })
-        // Check quorum membership immediately after successful connection
+        // Check quorum membership but don't prevent connection
+        // This only affects permissions for certain actions
         const isMember = await api.isQuorumMember(result.genesisAddress || '')
         setQuorumMembership(isMember)
 
