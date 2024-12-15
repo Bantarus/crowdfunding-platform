@@ -24,7 +24,7 @@ const applyFilters = (
   status: TaskStatus | null,
   sortBy: string
 ): Task[] => {
-  let filtered = tasks.filter((task) => {
+  const filtered = tasks.filter((task) => {
     const matchesCategory = !category || task.category === category
     const matchesQuery = !query || 
       task.title.toLowerCase().includes(query.toLowerCase()) ||

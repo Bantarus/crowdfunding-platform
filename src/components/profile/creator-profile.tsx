@@ -23,7 +23,7 @@ export function CreatorProfile({ address, stats, tasks }: CreatorProfileProps) {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
+            <CardTitle className="text-sm font-medium">Tinkerings Completed</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalCompleted}</div>
@@ -61,7 +61,7 @@ export function CreatorProfile({ address, stats, tasks }: CreatorProfileProps) {
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold tracking-tight">My Tasks</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Your Tinkerings</h2>
         <TaskGrid tasks={tasks} showWithdrawButton={true} />
       </div>
     </div>

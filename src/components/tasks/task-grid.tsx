@@ -20,7 +20,7 @@ export function TaskGrid({ tasks: propTasks, showWithdrawButton }: TaskGridProps
   if (error) {
     return (
       <Card className="p-6 text-center text-red-500">
-        Error loading tasks. Please try again later.
+        Error loading Tinkerings. Please try again later.
       </Card>
     )
   }
@@ -38,7 +38,7 @@ export function TaskGrid({ tasks: propTasks, showWithdrawButton }: TaskGridProps
   if (tasks.length === 0) {
     return (
       <Card className="p-6 text-center text-muted-foreground">
-        No tasks found. Try adjusting your filters.
+        No Tinkerings found. Try adjusting your filters.
       </Card>
     )
   }

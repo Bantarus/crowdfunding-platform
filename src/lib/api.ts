@@ -31,7 +31,7 @@ export const initializeArchethic = async () => {
 // Initialize Archethic client with required config
 const archethicClient = new Archethic(undefined)
 
-let connectionStateCallback: ((state: ConnectionState) => void) | null = null;
+const connectionStateCallback: ((state: ConnectionState) => void) | null = null;
 
 // Mock API endpoints - Replace with actual Archethic blockchain calls
 export const api = {

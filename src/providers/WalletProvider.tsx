@@ -22,6 +22,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       if (lastState === newState) {
         return;
       }
+      console.log('newState in WalletProvider', newState)
       
       if (newState === ConnectionState.Open && genesisAddress) {
         const isMember = await api.isQuorumMember(genesisAddress)

@@ -23,7 +23,7 @@ export function TaskFilters() {
   return (
     <div className="flex flex-col space-y-4 md:flex-row md:space-x-4 md:space-y-0">
       <Input
-        placeholder="Search tasks..."
+        placeholder="Search tinkerings..."
         className="md:w-[300px]"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
